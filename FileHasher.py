@@ -18,6 +18,7 @@ COLOR_PINK = '#FFCECE'
 start_time = time()
 permission_denied = 0
 unicode_decode_err = 0
+magic_err = 0
 other_err = 0
 total_files = 0
 total_size = 0
@@ -94,8 +95,9 @@ def print_result():
         'Redundancy percentage': redundancy_percent(),
         'Permission denied errors': permission_denied,
         'Unicode decode errors': unicode_decode_err,
+        'File type identification errors': magic_err,
         'Other errors': other_err,
-        'Time passed from the start': elapsed_time_dimenstion(total_time),
+        'Time passed': elapsed_time_dimenstion(total_time),
     }
 
     captions_length = len(max(results, key=len))
@@ -239,7 +241,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.7.1
+FileHasher 1.7.2
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
@@ -316,7 +318,10 @@ MD5-хэшам.
 
                         if(find_file_type):
                             with open(full_file_path, 'rb', buffering=0) as f:
-                                file_type = magic.from_buffer(f.read(2048))
+                                try:
+                                    file_type = magic.from_buffer(f.read(2048))
+                                except magic.magic.MagicException:
+                                    magic_err += 1
                                 duplicate_row += (file_type, )
                                 file_types[file_type] = file_types.get(file_type, 0) + 1
 
