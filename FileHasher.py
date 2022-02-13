@@ -18,6 +18,7 @@ COLOR_PINK = '#FFCECE'
 start_time = time()
 permission_denied = 0
 unicode_decode_err = 0
+other_err = 0
 total_files = 0
 total_size = 0
 redundancy_files = 0
@@ -93,6 +94,7 @@ def print_result():
         'Redundancy percentage': redundancy_percent(),
         'Permission denied errors': permission_denied,
         'Unicode decode errors': unicode_decode_err,
+        'Other errors': other_err,
         'Time passed from the start': elapsed_time_dimenstion(total_time),
     }
 
@@ -105,6 +107,7 @@ def print_result():
 
 def get_workbook(scanning_folder, report_file):
     if(report_file is None):
+        scanning_folder = scanning_folder.rstrip('\\').rstrip('/')
         report_file = f'.\\{path.basename(scanning_folder)}.xlsx'
 
     # If the report file with the specified name already exists,
@@ -236,7 +239,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.7
+FileHasher 1.7.1
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
@@ -287,7 +290,8 @@ MD5-хэшам.
                 file_size = 0
                 try:
                     file_size = stat(full_file_path).st_size
-                except FileNotFoundError:
+                except (FileNotFoundError, OSError) as e:
+                    other_err += 1
                     continue
                 total_files += 1
                 total_size += file_size
