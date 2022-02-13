@@ -18,4 +18,16 @@
     FileHasher --help
     FileHasher d:\TestDir -r result.csv -a md5
     FileHasher \\shared\folder -i 100 -t
-  
+
+### Скриншоты:
+Процесс сканирования выполнен  
+    
+![Alt text](/Screenshots/Scanning_process.png "Процесс сканирования")
+
+Лист Excel с подробным отчетом
+    
+![Alt text](/Screenshots/report_detailed.png "Подробный отчет")
+
+Лист Excel с итогом  
+    
+![Alt text](/Screenshots/report_summary.png "Подробный отчет")
