@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 from os import walk, stat, path, rename, system
+from sys import exit
 from time import time, strftime
 from datetime import datetime
 import magic
@@ -111,6 +112,9 @@ def get_workbook(scanning_folder, report_file):
     if(report_file is None):
         scanning_folder = scanning_folder.rstrip('\\').rstrip('/')
         report_file = f'.\\{path.basename(scanning_folder)}.xlsx'
+    elif not path.exists(path.dirname(report_file)):
+        print(f'\nFolder {path.dirname(report_file)} does not exist\n')
+        exit()
 
     # If the report file with the specified name already exists,
     # rename the old file by adding the date/time of its change
@@ -241,7 +245,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.7.2
+FileHasher 1.7.3
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
