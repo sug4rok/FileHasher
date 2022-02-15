@@ -1,0 +1,3 @@
+python-magic>=0.4.2
+python-magic-bin>=0.4.13
+XlsxWriter>=1.0.0
