@@ -112,9 +112,18 @@ def get_workbook(scanning_folder, report_file):
     if(report_file is None):
         scanning_folder = scanning_folder.rstrip('\\').rstrip('/')
         report_file = f'.\\{path.basename(scanning_folder)}.xlsx'
-    elif not path.exists(path.dirname(report_file)):
-        print(f'\nFolder {path.dirname(report_file)} does not exist\n')
-        exit()
+    else:
+        if not path.dirname(report_file):
+            report_file = path.join('.', report_file)
+
+        if not path.exists(path.dirname(report_file)):
+            print(f'\nFolder {path.dirname(report_file)} does not exist\n')
+            exit()
+
+    rp_name, rp_ext = path.splitext(report_file)
+    if rp_ext != '.xlsx':
+        rp_ext = '.xlsx'
+        report_file = rp_name + rp_ext
 
     # If the report file with the specified name already exists,
     # rename the old file by adding the date/time of its change
@@ -122,8 +131,7 @@ def get_workbook(scanning_folder, report_file):
     if(path.isfile(report_file)):
         rp_modified = datetime.fromtimestamp(path.getmtime(report_file))
         rp_modified = rp_modified.strftime('%Y-%m-%d_%H%M%S')
-        rp_name_ext = path.splitext(report_file)
-        rename(report_file, f'{rp_name_ext[0]}_{rp_modified}{rp_name_ext[1]}')
+        rename(report_file, f'{rp_name}_{rp_modified}{rp_ext}')
 
     return xlsxwriter.Workbook(report_file)
 
@@ -245,7 +253,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.7.3
+FileHasher 1.7.4
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
