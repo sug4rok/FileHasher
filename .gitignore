@@ -131,4 +131,4 @@ dmypy.json
 scripts/
 development/
 pyvenv.cfg
-
+.idea
