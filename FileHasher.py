@@ -34,7 +34,7 @@ def get_hash_from_file(full_file_path, hash_alg='sha1', chunk_num_blocks=1024):
     try:
         with open(full_file_path, 'rb', buffering=0) as f:
             h = hashlib.sha1()
-            if(hash_alg == 'md5'):
+            if hash_alg == 'md5':
                 h = hashlib.md5()
 
             block_size = h.block_size * chunk_num_blocks
@@ -49,10 +49,6 @@ def get_hash_from_file(full_file_path, hash_alg='sha1', chunk_num_blocks=1024):
         return None
 
     return h.hexdigest()
-
-
-def get_formated_string(caption, value, captions_length):
-    return f' {caption}:{" " * (captions_length - len(caption))} {value}'
 
 
 def redundancy_percent():
@@ -104,12 +100,13 @@ def print_result():
     captions_length = len(max(results, key=len))
     system('cls')
     print(ASCII_TITLE)
+
     for caption, value in results.items():
-        print(get_formated_string(caption, value, captions_length))
+        print(f' {caption.ljust(captions_length)}: {value}')
 
 
 def get_workbook(scanning_folder, report_file):
-    if(report_file is None):
+    if report_file is None:
         scanning_folder = scanning_folder.rstrip('\\').rstrip('/')
         report_file = f'.\\{path.basename(scanning_folder)}.xlsx'
     else:
@@ -128,7 +125,7 @@ def get_workbook(scanning_folder, report_file):
     # If the report file with the specified name already exists,
     # rename the old file by adding the date/time of its change
     # in the file name.
-    if(path.isfile(report_file)):
+    if path.isfile(report_file):
         rp_modified = datetime.fromtimestamp(path.getmtime(report_file))
         rp_modified = rp_modified.strftime('%Y-%m-%d_%H%M%S')
         rename(report_file, f'{rp_name}_{rp_modified}{rp_ext}')
@@ -154,7 +151,7 @@ def get_ws_detailed(workbook, find_file_type):
         'Размер',
         'Уникальный хэш файла',
     )
-    if(find_file_type):
+    if find_file_type:
         worksheet.set_column(4, 4, 40)
         worksheet.autofilter(0, 0, 0, 4)
         captions += ('Тип файла', )
@@ -232,7 +229,7 @@ def add_ws_summary(workbook, find_file_type):
                     style_data_bold_cntr_light)
 
     # Table File Types
-    if(find_file_type):
+    if find_file_type:
         worksheet.set_column(6, 6, 60)
         worksheet.set_column(7, 7, 7)
 
@@ -328,7 +325,7 @@ MD5-хэшам.
                                          file_size_dimension(file_size),
                                          file_hash)
 
-                        if(find_file_type):
+                        if find_file_type:
                             with open(full_file_path, 'rb', buffering=0) as f:
                                 try:
                                     file_type = magic.from_buffer(f.read(2048))
