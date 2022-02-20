@@ -1,13 +1,13 @@
 ﻿# coding=utf-8
 import argparse
 import hashlib
+from datetime import datetime
 from os import walk, stat, path, rename, system
 from sys import exit
-from time import time, strftime
-from datetime import datetime
+from time import time
+
 import magic
 import xlsxwriter
-
 
 ASCII_TITLE = "  ___ _ _     _  _         _             \n" \
               " | __(_) |___| || |__ _ __| |_  ___ _ _  \n" \
@@ -46,6 +46,7 @@ def get_hash_from_file(full_file_path, hash_alg='sha1', chunk_num_blocks=1024):
         permission_denied += 1
         return None
     except OSError:
+        other_err += 1
         return None
 
     return h.hexdigest()
@@ -72,7 +73,7 @@ def file_size_dimension(file_size):
     return f'{round(file_size / 1024, 1)} TB'
 
 
-def elapsed_time_dimenstion(total_time):
+def elapsed_time_dimension(total_time):
     total_time = round(total_time, 1)
     if total_time < 60:
         return f'{total_time} s'
@@ -94,7 +95,7 @@ def print_result():
         'Unicode decode errors': unicode_decode_err,
         'File type identification errors': magic_err,
         'Other errors': other_err,
-        'Time passed': elapsed_time_dimenstion(total_time),
+        'Time passed': elapsed_time_dimension(total_time),
     }
 
     captions_length = len(max(results, key=len))
@@ -154,7 +155,7 @@ def get_ws_detailed(workbook, find_file_type):
     if find_file_type:
         worksheet.set_column(4, 4, 40)
         worksheet.autofilter(0, 0, 0, 4)
-        captions += ('Тип файла', )
+        captions += ('Тип файла',)
 
     for caption in captions:
         worksheet.write(0, captions.index(caption), caption, style_cap)
@@ -285,7 +286,6 @@ MD5-хэшам.
     report_file = args.r
     find_file_type = args.t
 
-    hashes = set()
     original_file = {}
     duplicate_files = {}
     workbook = get_workbook(scanning_folder, report_file)
@@ -314,7 +314,7 @@ MD5-хэшам.
 
                 # If we already have the same hash, we consider this file is
                 # a duplicate file
-                if file_hash in hashes:
+                if file_hash in original_file:
                     redundancy_files += 1
                     redundancy_size += file_size
                     duplicate_files[full_file_path] = file_size
@@ -331,7 +331,7 @@ MD5-хэшам.
                                     file_type = magic.from_buffer(f.read(2048))
                                 except magic.magic.MagicException:
                                     magic_err += 1
-                                duplicate_row += (file_type, )
+                                duplicate_row += (file_type,)
                                 file_types[file_type] = file_types.get(file_type, 0) + 1
 
                         for item in duplicate_row:
@@ -343,7 +343,6 @@ MD5-хэшам.
                     except UnicodeEncodeError:
                         unicode_decode_err += 1
                 else:
-                    hashes.add(file_hash)
                     original_file[file_hash] = full_file_path
 
                 if total_files % iterations == 0:
