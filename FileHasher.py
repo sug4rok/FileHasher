@@ -28,19 +28,13 @@ redundancy_size = 0
 file_types = {}
 
 
-def get_hash_from_file(full_file_path, hash_alg='sha1', chunk_num_blocks=1024):
+def get_hash_from_file(full_file_path, hash_alg, block_size):
     global permission_denied
 
     try:
         with open(full_file_path, 'rb', buffering=0) as f:
-            h = hashlib.sha1()
-            if hash_alg == 'md5':
-                h = hashlib.md5()
-
-            block_size = h.block_size * chunk_num_blocks
-
             while chunk := f.read(block_size):
-                h.update(chunk)
+                hash_alg.update(chunk)
 
     except PermissionError:
         permission_denied += 1
@@ -49,7 +43,7 @@ def get_hash_from_file(full_file_path, hash_alg='sha1', chunk_num_blocks=1024):
         other_err += 1
         return None
 
-    return h.hexdigest()
+    return hash_alg.hexdigest()
 
 
 def redundancy_percent():
@@ -251,7 +245,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.7.4
+FileHasher 1.7.5
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
@@ -281,7 +275,11 @@ MD5-хэшам.
     args = parser.parse_args()
 
     scanning_folder = args.folder
-    algorithm = args.a
+    if args.a == 'sha1':
+        hash_alg = hashlib.sha1()
+    else:
+        hash_alg = hashlib.md5()
+    block_size = hash_alg.block_size * 1024
     iterations = args.i
     report_file = args.r
     find_file_type = args.t
@@ -308,7 +306,7 @@ MD5-хэшам.
                 total_size += file_size
 
                 file_hash = get_hash_from_file(full_file_path,
-                                               hash_alg=algorithm)
+                                               hash_alg.copy(), block_size)
                 if file_hash is None:
                     continue
 
