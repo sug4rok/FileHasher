@@ -100,10 +100,12 @@ def print_result():
         print(f' {caption.ljust(captions_length)}: {value}')
 
 
-def get_workbook(scanning_folder, report_file):
+def get_workbook(scanning_folders, report_file):
     if report_file is None:
-        scanning_folder = scanning_folder.rstrip('\\').rstrip('/')
-        report_file = f'.\\{path.basename(scanning_folder)}.xlsx'
+        report_file = []
+        for sf in scanning_folders:
+            report_file.append(path.basename(sf.rstrip('\\').rstrip('/')))
+        report_file = f'.\\{"_".join(report_file)}.xlsx'
     else:
         if not path.dirname(report_file):
             report_file = path.join('.', report_file)
@@ -141,8 +143,8 @@ def get_ws_detailed(workbook, find_file_type):
     worksheet.autofilter(0, 0, 0, 3)
 
     captions = (
-        'Дублирующий файл',
         'Оригинальный файл',
+        'Дублирующий файл',
         'Размер',
         'Уникальный хэш файла',
     )
@@ -245,7 +247,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.7.6
+FileHasher 1.8.0
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
@@ -253,11 +255,13 @@ MD5-хэшам.
     parser.epilog = u"""
 Примеры:
   FileHasher --help
-  FileHasher d:\\TestDir -r result.csv -a md5
-  FileHasher \\\\shared\\folder -i 100 -t"""
+  FileHasher d:\\folder -r result.csv -a md5
+  FileHasher \\\\shared\\folder -i 100 -t
+  FileHasher d:\\folder1 \\\\shared\\folder2"""
 
-    parser.add_argument('folder', metavar='FOLDER', type=str,
-                        help=u'Путь к папке, включая имя самой папки')
+    parser.add_argument('folder', metavar='FOLDER', type=str, nargs='+',
+                        help=u'Путь к папке, включая имя самой папки.\
+                        Папок может быть указано несколько (см. Примеры)')
     parser.add_argument('-a', choices=['sha1', 'md5'], default='sha1',
                         help=u'Алгоритм хеширования sha1 (по умолчанию)\
                         или md5')
@@ -274,7 +278,8 @@ MD5-хэшам.
 
     args = parser.parse_args()
 
-    scanning_folder = args.folder
+    scanning_folders = args.folder
+
     if args.a == 'sha1':
         hash_alg = hashlib.sha1()
     else:
@@ -286,68 +291,69 @@ MD5-хэшам.
 
     original_file = {}
     duplicate_files = {}
-    workbook = get_workbook(scanning_folder, report_file)
+    workbook = get_workbook(scanning_folders, report_file)
     worksheet_detailed = get_ws_detailed(workbook, find_file_type)
 
     print_result()
 
     row = 1
-    for root, dirs, files in walk(scanning_folder, followlinks=False):
-        for file in files:
-            full_file_path = path.join(root, file)
-            total_files += 1
-            try:
-                file_size = stat(full_file_path).st_size
-            except (FileNotFoundError, OSError) as e:
-                other_err += 1
-                continue
-
-            # Skipping empty files
-            if not file_size:
-                continue
-
-            total_size += file_size
-
-            file_hash = get_hash_from_file(full_file_path, hash_alg.copy(),
-                                           block_size)
-            if file_hash is None:
-                continue
-
-            # If we already have the same hash, we consider this file is
-            # a duplicate file
-            if file_hash in original_file:
-                redundancy_files += 1
-                redundancy_size += file_size
-                duplicate_files[full_file_path] = file_size
-
+    for sf in scanning_folders:
+        for root, dirs, files in walk(sf, followlinks=False):
+            for file in files:
+                full_file_path = path.join(root, file)
+                total_files += 1
                 try:
-                    duplicate_row = (original_file[file_hash],
-                                     full_file_path,
-                                     file_size_dimension(file_size),
-                                     file_hash)
+                    file_size = stat(full_file_path).st_size
+                except (FileNotFoundError, OSError) as e:
+                    other_err += 1
+                    continue
 
-                    if find_file_type:
-                        with open(full_file_path, 'rb', buffering=0) as f:
-                            try:
-                                file_type = magic.from_buffer(f.read(2048))
-                            except magic.magic.MagicException:
-                                magic_err += 1
-                            duplicate_row += (file_type,)
-                            file_types[file_type] = file_types.get(file_type, 0) + 1
+                # Skipping empty files
+                if not file_size:
+                    continue
 
-                    for item in duplicate_row:
-                        worksheet_detailed.write(row,
-                                                 duplicate_row.index(item),
-                                                 item)
+                total_size += file_size
 
-                    row += 1
-                except UnicodeEncodeError:
-                    unicode_decode_err += 1
-            else:
-                original_file[file_hash] = full_file_path
+                file_hash = get_hash_from_file(full_file_path, hash_alg.copy(),
+                                               block_size)
+                if file_hash is None:
+                    continue
 
-            if total_files % iterations == 0:
-                print_result()
+                # If we already have the same hash, we consider this file is
+                # a duplicate file
+                if file_hash in original_file:
+                    redundancy_files += 1
+                    redundancy_size += file_size
+                    duplicate_files[full_file_path] = file_size
+
+                    try:
+                        duplicate_row = (original_file[file_hash],
+                                         full_file_path,
+                                         file_size_dimension(file_size),
+                                         file_hash)
+
+                        if find_file_type:
+                            with open(full_file_path, 'rb', buffering=0) as f:
+                                try:
+                                    ft = magic.from_buffer(f.read(2048))
+                                except magic.magic.MagicException:
+                                    magic_err += 1
+                                duplicate_row += (ft,)
+                                file_types[ft] = file_types.get(ft, 0) + 1
+
+                        for item in duplicate_row:
+                            worksheet_detailed.write(row,
+                                                     duplicate_row.index(item),
+                                                     item)
+
+                        row += 1
+                    except UnicodeEncodeError:
+                        unicode_decode_err += 1
+                else:
+                    original_file[file_hash] = full_file_path
+
+                if total_files % iterations == 0:
+                    print_result()
 
     add_ws_summary(workbook, find_file_type)
     workbook.close()
