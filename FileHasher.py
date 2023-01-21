@@ -30,6 +30,7 @@ file_types = {}
 
 def get_hash_from_file(full_file_path, hash_alg, block_size):
     global permission_denied
+    global other_err
 
     try:
         with open(full_file_path, 'rb', buffering=0) as f:
@@ -247,7 +248,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 1.8.0
+FileHasher 1.8.1
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
@@ -298,7 +299,7 @@ MD5-хэшам.
 
     row = 1
     for sf in scanning_folders:
-        for root, dirs, files in walk(sf, followlinks=False):
+        for root, dirs, files in walk(sf):
             for file in files:
                 full_file_path = path.join(root, file)
                 total_files += 1
@@ -336,7 +337,7 @@ MD5-хэшам.
                             with open(full_file_path, 'rb', buffering=0) as f:
                                 try:
                                     ft = magic.from_buffer(f.read(2048))
-                                except magic.magic.MagicException:
+                                except magic.MagicException:
                                     magic_err += 1
                                 duplicate_row += (ft,)
                                 file_types[ft] = file_types.get(ft, 0) + 1
