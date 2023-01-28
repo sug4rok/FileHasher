@@ -16,7 +16,7 @@
 
 ### Примеры:
     FileHasher --help
-    FileHasher d:\folder -r result.csv -a md5
+    FileHasher d:\folder -r result.xlsx -a md5
     FileHasher \\shared\folder -i 100 -t
     FileHasher d:\folder1 \\shared\folder2
 
@@ -28,7 +28,7 @@
 ### Скриншоты:
 Процесс сканирования выполнен  
     
-![Процесс сканирования](/Screenshots/Scanning_process.png "Процесс сканирования")
+![Процесс сканирования](/Screenshots/scan_process.png "Процесс сканирования")
 
 Лист Excel с подробным отчетом
     
