@@ -9,7 +9,7 @@ ASCII_TITLE = "  ___ _ _     _  _         _             \n" \
               " |_| |_|_\___|_||_\__,_/__/_||_\___|_|   \n"
 
 
-def elapsed_time_dimension(eval_time):
+def human_readable_time(eval_time):
     eval_time = round(eval_time, 1)
     if eval_time < 60:
         return f'{eval_time} s'
@@ -95,18 +95,18 @@ class Result:
 
     def print_result(self):
         total_time = time() - self._start_time
-        results = {
+        summary = {
             'Total files': self.total_files,
             'Total size': self.hr_total_size,
             'Redundancy files': self.redundancy_files,
             'Redundancy size': self.hr_redundancy_size,
             'Redundancy percentage': self.redundancy_percent,
-            'Time passed': elapsed_time_dimension(total_time),
+            'Time passed': human_readable_time(total_time),
         }
 
-        captions_length = len(max(results, key=len))
+        captions_length = len(max(summary, key=len))
         system('cls')
         print(ASCII_TITLE)
 
-        for caption, value in results.items():
+        for caption, value in summary.items():
             print(f' {caption.ljust(captions_length)}: {value}')
