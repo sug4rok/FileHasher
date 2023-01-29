@@ -1,6 +1,7 @@
 # coding=utf-8
-from os import stat
 from hashlib import sha1, md5
+from os import stat
+
 import magic
 
 

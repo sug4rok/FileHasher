@@ -1,6 +1,7 @@
 # coding=utf-8
-from time import time
 from os import system
+from time import time
+
 from FHFile import human_readable_size
 
 ASCII_TITLE = "  ___ _ _     _  _         _             \n" \

@@ -1,10 +1,11 @@
 # coding=utf-8
 import argparse
 from datetime import datetime
+from importlib import import_module
 from os import walk, path, rename
 from sys import exit
 from types import SimpleNamespace
-from importlib import import_module
+
 import xlsxwriter
 from FHFile import File
 from FHResult import Result
@@ -149,18 +150,10 @@ Examples:
         ws_detailed = workbook.add_worksheet(text.xls.ws_detailed)
         ws_summary = workbook.add_worksheet(text.xls.ws_summary)
 
-        ws_detailed.set_column('A:B', 71)
-        ws_detailed.set_column('C:C', 8)
-        ws_detailed.set_column('D:D', 41)
-        ws_detailed.autofilter('A1:D1')
-        ws_detailed.freeze_panes('A2')
-
         # Table: Details
         captions = (text.xls.cap1_A1, text.xls.cap1_B1,
                     text.xls.cap1_C1, text.xls.cap1_D1, )
         if args.t:
-            ws_detailed.set_column('E:E', 40)
-            ws_detailed.autofilter('A1:E1')
             captions += (text.xls.cap1_E1,)
 
         ws_detailed.write_row('A1', captions, stl_cap)
@@ -170,13 +163,6 @@ Examples:
             ws_detailed.write(row, 2, duplicate.hr_size)
             ws_detailed.write(row, 3, duplicate.hash)
             ws_detailed.write(row, 4, duplicate.ftype)
-
-        ws_summary.set_column('A:A', 20)
-        ws_summary.set_column('B:B', 8)
-        ws_summary.set_column('C:C', 2)
-        ws_summary.set_column('D:D', 71)
-        ws_summary.set_column('E:E', 8)
-        ws_summary.set_column('F:F', 2)
 
         # Table: Summary
         captions = (text.xls.cap2_A1, text.xls.cap2_A2, text.xls.cap2_A3,
@@ -201,15 +187,26 @@ Examples:
                          stl_data_bold_cntr_light)
 
         # Table: File Types
-        if args.t:
-            ws_summary.set_column('G:G', 60)
-            ws_summary.set_column('H:H', 7)
+        ws_summary.write('G1', text.xls.cap4_G1, stl_cap)
+        ws_summary.write('H1', text.xls.cap4_H1, stl_cap)
+        for row, file_types in enumerate(result.get_file_types(), 1):
+            ws_summary.write(row, 6, file_types[0], stl_data_left)
+            ws_summary.write(row, 7, file_types[1], stl_data_cntr)
 
-            ws_summary.write('G1', text.xls.cap4_G1, stl_cap)
-            ws_summary.write('H1', text.xls.cap4_H1, stl_cap)
-            for row, file_types in enumerate(result.get_file_types(), 1):
-                ws_summary.write(row, 6, file_types[0], stl_data_left)
-                ws_summary.write(row, 7, file_types[1], stl_data_cntr)
+        ws_detailed.autofit()
+        ws_detailed.set_column('A:B', 60)
+        ws_detailed.freeze_panes('A2')
+        ws_detailed.autofilter('A1:D1')
+        if args.t:
+            ws_detailed.set_column('E:E', 50)
+            ws_detailed.autofilter('A1:E1')
+
+        ws_summary.autofit()
+        ws_summary.set_column('C:C', 2)
+        ws_summary.set_column('D:D', 60)
+        ws_summary.set_column('F:F', 2)
+        if args.t:
+            ws_summary.set_column('G:G', 50)
 
     result.print_result()
     print(f'\n {text.cli.done}!')
