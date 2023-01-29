@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = f"""\n
 =====================================================================
-FileHasher 2.1.0
+FileHasher 2.1.1
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
