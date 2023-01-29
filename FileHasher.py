@@ -9,10 +9,6 @@ from FHFile import File
 from FHResult import Result
 
 
-COLOR_PURPLE = '#D2D2FF'
-COLOR_PINK = '#FFCECE'
-
-
 def get_report_filename(scanning_folders, report_file):
     if report_file is None:
         report_file = []
@@ -49,7 +45,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = u"""\n
 =====================================================================
-FileHasher 2.0.1
+FileHasher 2.0.2
 
 Программа поиска дубликатов файлов в указанной папке по их SHA1- или
 MD5-хэшам.
@@ -100,17 +96,50 @@ MD5-хэшам.
 
     report_filename = get_report_filename(args.folder, args.r)
     with xlsxwriter.Workbook(report_filename) as workbook:
-        ws_detailed = workbook.add_worksheet(u'Подробно')
-        style_cap = workbook.add_format()
-        style_cap.set_bg_color(COLOR_PURPLE)
-        style_cap.set_bold(True)
-        style_cap.set_align('center')
-        style_cap.set_bottom(1)
-        ws_detailed.set_column(0, 1, 71)
-        ws_detailed.set_column(2, 2, 8)
-        ws_detailed.set_column(3, 3, 41)
-        ws_detailed.autofilter(0, 0, 0, 3)
+        clr_purple = '#D2D2FF'
+        clr_ping = '#FFCECE'
+        stl_cap = workbook.add_format({
+            'bold': True,
+            'bg_color': clr_purple,
+            'align': 'center',
+            'bottom': 1,
+        })
+        stl_cap_left = workbook.add_format({
+            'bold': True,
+            'bg_color': clr_purple,
+            'bottom': 7,
+        })
+        stl_data_cntr = workbook.add_format({
+            'bg_color': clr_purple,
+            'align': 'center',
+            'bottom': 7,
+        })
+        stl_data_cntr_light = workbook.add_format({
+            'bg_color': clr_ping,
+            'align': 'center',
+            'bottom': 7,
+        })
+        stl_data_left = workbook.add_format({
+            'bg_color': clr_purple,
+            'bottom': 7,
+        })
+        stl_data_bold_cntr_light = workbook.add_format({
+            'bold': True,
+            'bg_color': clr_ping,
+            'align': 'center',
+            'top': 1,
+        })
 
+        ws_detailed = workbook.add_worksheet(u'Подробно')
+        ws_summary = workbook.add_worksheet(u'Итог')
+
+        ws_detailed.set_column('A:B', 71)
+        ws_detailed.set_column('C:C', 8)
+        ws_detailed.set_column('D:D', 41)
+        ws_detailed.autofilter('A1:D1')
+        ws_detailed.freeze_panes('A2')
+
+        # Table: Details
         captions = (
             'Оригинальный файл',
             'Дублирующий файл',
@@ -118,11 +147,11 @@ MD5-хэшам.
             'Уникальный хэш файла',
         )
         if args.t:
-            ws_detailed.set_column(4, 4, 40)
-            ws_detailed.autofilter(0, 0, 0, 4)
+            ws_detailed.set_column('E:E', 40)
+            ws_detailed.autofilter('A1:E1')
             captions += ('Тип файла',)
 
-        ws_detailed.write_row('A1', captions, style_cap)
+        ws_detailed.write_row('A1', captions, stl_cap)
         for row, duplicate in enumerate(duplicates, 1):
             ws_detailed.write(row, 0, originals[duplicate.hash].full_path)
             ws_detailed.write(row, 1, duplicate.full_path)
@@ -130,40 +159,14 @@ MD5-хэшам.
             ws_detailed.write(row, 3, duplicate.hash)
             ws_detailed.write(row, 4, duplicate.ftype)
 
-        ws_summary = workbook.add_worksheet(u'Итог')
-        style_cap_cntr = workbook.add_format()
-        style_cap_cntr.set_bg_color(COLOR_PURPLE)
-        style_cap_cntr.set_bold(True)
-        style_cap_cntr.set_align('center')
-        style_cap_cntr.set_bottom(1)
-        style_cap_left = workbook.add_format()
-        style_cap_left.set_bg_color(COLOR_PURPLE)
-        style_cap_left.set_bold(True)
-        style_cap_left.set_bottom(7)
-        style_data_cntr = workbook.add_format()
-        style_data_cntr.set_bg_color(COLOR_PURPLE)
-        style_data_cntr.set_align('center')
-        style_data_cntr.set_bottom(7)
-        style_data_cntr_light = workbook.add_format()
-        style_data_cntr_light.set_bg_color(COLOR_PINK)
-        style_data_cntr_light.set_align('center')
-        style_data_cntr_light.set_bottom(7)
-        style_data_left = workbook.add_format()
-        style_data_left.set_bg_color(COLOR_PURPLE)
-        style_data_left.set_bottom(7)
-        style_data_bold_cntr_light = workbook.add_format()
-        style_data_bold_cntr_light.set_bg_color(COLOR_PINK)
-        style_data_bold_cntr_light.set_align('center')
-        style_data_bold_cntr_light.set_top(1)
-        style_data_bold_cntr_light.set_bold(True)
-        ws_summary.set_column(0, 0, 20)
-        ws_summary.set_column(1, 1, 8)
-        ws_summary.set_column(2, 2, 2)
-        ws_summary.set_column(3, 3, 71)
-        ws_summary.set_column(4, 4, 8)
-        ws_summary.set_column(5, 5, 2)
+        ws_summary.set_column('A:A', 20)
+        ws_summary.set_column('B:B', 8)
+        ws_summary.set_column('C:C', 2)
+        ws_summary.set_column('D:D', 71)
+        ws_summary.set_column('E:E', 8)
+        ws_summary.set_column('F:F', 2)
 
-        # Table Summary
+        # Table: Summary
         captions = (
             'Файлов всего',
             'Занято всего',
@@ -171,35 +174,35 @@ MD5-хэшам.
             'Занято дубликатами',
             'Процент дубликатов',
         )
-        ws_summary.write_column('A1', captions, style_cap_left)
-        ws_summary.write(0, 1, f'{result.total_files}', style_data_cntr)
-        ws_summary.write(1, 1, result.hr_total_size, style_data_cntr)
-        ws_summary.write(2, 1, f'{result.redundancy_files}', style_data_cntr_light)
-        ws_summary.write(3, 1, result.hr_redundancy_size, style_data_cntr_light)
-        ws_summary.write(4, 1, result.redundancy_percent, style_data_cntr_light)
+        ws_summary.write_column('A1', captions, stl_cap_left)
+        ws_summary.write(0, 1, f'{result.total_files}', stl_data_cntr)
+        ws_summary.write(1, 1, result.hr_total_size, stl_data_cntr)
+        ws_summary.write(2, 1, f'{result.redundancy_files}', stl_data_cntr_light)
+        ws_summary.write(3, 1, result.hr_redundancy_size, stl_data_cntr_light)
+        ws_summary.write(4, 1, result.redundancy_percent, stl_data_cntr_light)
 
-        # Table Top 10 Duplicates
-        ws_summary.write(0, 3, 'Десятка самых больших дубликатов', style_cap_cntr)
-        ws_summary.write(0, 4, 'Размер', style_cap_cntr)
+        # Table: Top 10 Duplicates
+        ws_summary.write(0, 3, 'Десятка самых больших дубликатов', stl_cap)
+        ws_summary.write(0, 4, 'Размер', stl_cap)
 
         row = 1
         for file in result.get_top10_duplicates():
-            ws_summary.write(row, 3, file.full_path, style_data_left)
-            ws_summary.write(row, 4, file.hr_size, style_data_cntr)
+            ws_summary.write(row, 3, file.full_path, stl_data_left)
+            ws_summary.write(row, 4, file.hr_size, stl_data_cntr)
             row += 1
         ws_summary.write(row, 4, result.get_top10_size(),
-                         style_data_bold_cntr_light)
+                         stl_data_bold_cntr_light)
 
-        # Table File Types
+        # Table: File Types
         if args.t:
-            ws_summary.set_column(6, 6, 60)
-            ws_summary.set_column(7, 7, 7)
+            ws_summary.set_column('G:G', 60)
+            ws_summary.set_column('H:H', 7)
 
-            ws_summary.write(0, 6, 'Дублирующие файлы по типу', style_cap_cntr)
-            ws_summary.write(0, 7, 'Кол-во', style_cap_cntr)
+            ws_summary.write(0, 6, 'Дублирующие файлы по типу', stl_cap)
+            ws_summary.write(0, 7, 'Кол-во', stl_cap)
             for row, file_types in enumerate(result.get_file_types(), 1):
-                ws_summary.write(row, 6, file_types[0], style_data_left)
-                ws_summary.write(row, 7, file_types[1], style_data_cntr)
+                ws_summary.write(row, 6, file_types[0], stl_data_left)
+                ws_summary.write(row, 7, file_types[1], stl_data_cntr)
 
     result.print_result()
     print('\n DONE!')
