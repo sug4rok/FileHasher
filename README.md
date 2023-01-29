@@ -1,39 +1,40 @@
 # FileHasher
-## Программа поиска дубликатов файлов в указанной папке по их SHA1- или MD5-хэшам.
+### The program to search for duplicate files in a specified folder by their SHA1 or MD5 hashes.
 
-### Запуск:
-    FileHasher [-h] [-a {sha1,md5}] [-i NUMBER] [-r RESULT.XLSX] [-t] FOLDER [FOLDER ...]
+### Usage:
+    FileHasher [-h] [-a {sha1,md5}] [-i NUMBER] [-r RESULT.XLSX] [-t] [-l {en,ru}] FOLDER [FOLDER ...]
 
-### Позиционный аргумент:
-    FOLDER          Путь к папке, включая имя самой папки. Папок может быть указано несколько (см. Примеры)
+### Positional arguments:
+    FOLDER          The path to the folder, including the name of the folder itself. Several folders can be specified (see Examples)
 
-### Опциональные аргументы:
-    -h, --help      Отображение данной справки  
-    -a {sha1,md5}   Алгоритм хеширования sha1 (по умолчанию) или md5  
-    -i NUMBER       Через какое кол-во проверенных файлов выводить промежуточный результат             
-    -r RESULT.XLSX  Файл Excel с результатом. Если не указан, создается в папке с программой с именем сканируемой папки         
-    -t              Определять тип файла, например, "Microsoft Excel 2007+" или "ISO 9660 CD-ROM"               
+### Options:
+	-h, --help      show this help message and exit
+	-a {sha1,md5}   Hash algorithm sha1 (default) or md5
+	-i NUMBER       After how many scanned files an intermediate result should be shown
+	-r RESULT.XLSX  Excel file with the result. If it was not specified, it is created in the program folder with the name of the scanned folder
+	-t              Detect file type, e.g. "Microsoft Excel 2007+" or "ISO 9660 CD-ROM"
+	-l {en,ru}      Language of output to the console and to the report file            
 
-### Примеры:
+### Examples:
     FileHasher --help
     FileHasher d:\folder -r result.xlsx -a md5
     FileHasher \\shared\folder -i 100 -t
     FileHasher d:\folder1 \\shared\folder2
 
-### Зависимости:
+### Dependencies:
 - python-magic
 - python-magic-bin
 - XlsxWriter
 
-### Скриншоты:
-Процесс сканирования выполнен  
+### Screenshots:
+Scan completed 
     
-![Процесс сканирования](/Screenshots/scan_process.png "Процесс сканирования")
+![Процесс сканирования](/Screenshots/scan_process.png "Scan process")
 
-Лист Excel с подробным отчетом
+Excel sheet with detailed report
     
-![Подробный отчет](/Screenshots/report_detailed.png "Подробный отчет")
+![Detailed report](/Screenshots/report_detailed.png "Detailed report")
 
-Лист Excel с суммарным отчетом  
+Excel sheet with summary report
     
-![Сводный отчет](/Screenshots/report_summary.png "Сводный отчет")
+![Summary report](/Screenshots/report_summary.png "Summary report")

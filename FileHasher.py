@@ -3,10 +3,21 @@ import argparse
 from datetime import datetime
 from os import walk, path, rename
 from sys import exit
+from types import SimpleNamespace
+from importlib import import_module
 import xlsxwriter
-
 from FHFile import File
 from FHResult import Result
+
+
+class NestedNamespace(SimpleNamespace):
+    def __init__(self, dictionary, **kwargs):
+        super().__init__(**kwargs)
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                self.__setattr__(key, NestedNamespace(value))
+            else:
+                self.__setattr__(key, value)
 
 
 def get_report_filename(scanning_folders, report_file):
@@ -43,40 +54,45 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_help = False
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
-    parser.description = u"""\n
+    parser.description = f"""\n
 =====================================================================
-FileHasher 2.0.2
+FileHasher 2.1.0
 
-Программа поиска дубликатов файлов в указанной папке по их SHA1- или
-MD5-хэшам.
+The program to search for duplicate files in a specified folder
+by their SHA1 or MD5 hashes.
 ====================================================================="""
     parser.epilog = u"""
-Примеры:
+Examples:
   FileHasher --help
   FileHasher d:\\folder -r result.csv -a md5
   FileHasher \\\\shared\\folder -i 100 -t
   FileHasher d:\\folder1 \\\\shared\\folder2"""
 
     parser.add_argument('folder', metavar='FOLDER', type=str, nargs='+',
-                        help=u'Путь к папке, включая имя самой папки.\
-                        Папок может быть указано несколько (см. Примеры)')
+                        help='The path to the folder, including the name\
+                        of the folder itself.\
+                        Several folders can be specified (see Examples)')
     parser.add_argument('-a', choices=['sha1', 'md5'], default='sha1',
-                        help=u'Алгоритм хеширования sha1 (по умолчанию)\
-                        или md5')
+                        help=u'Hash algorithm sha1 (default) or md5')
     parser.add_argument('-i', metavar='NUMBER', type=int, default=1000,
-                        help=u'Через какое кол-во проверенных файлов выводить \
-                        промежуточный результат')
+                        help=u'After how many scanned files an intermediate\
+                        result should be shown')
     parser.add_argument('-r', metavar='RESULT.XLSX', required=False, type=str,
-                        help=u'Файл Excel с результатом. Если не указан,\
-                        создается в папке с программой с именем\
-                        сканируемой папки')
+                        help=u'Excel file with the result. If it was not\
+                        specified, it is created in the program folder with\
+                        the name of the scanned folder')
     parser.add_argument('-t', action='store_true',
-                        help=u'Определять тип файла, например,\
-                        "Microsoft Excel 2007+" или "ISO 9660 CD-ROM"')
+                        help=u'Detect file type, e.g. "Microsoft Excel 2007+"\
+                        or "ISO 9660 CD-ROM"')
+    parser.add_argument('-l', choices=['en', 'ru'], default='ru',
+                        help=u'Language of output to the console and\
+                        to the report file')
 
     args = parser.parse_args()
 
-    result = Result()
+    text = NestedNamespace(import_module(f'locales.{args.l}').text)
+
+    result = Result(text)
     result.print_result()
 
     for sf in args.folder:
@@ -130,8 +146,8 @@ MD5-хэшам.
             'top': 1,
         })
 
-        ws_detailed = workbook.add_worksheet(u'Подробно')
-        ws_summary = workbook.add_worksheet(u'Итог')
+        ws_detailed = workbook.add_worksheet(text.xls.ws_detailed)
+        ws_summary = workbook.add_worksheet(text.xls.ws_summary)
 
         ws_detailed.set_column('A:B', 71)
         ws_detailed.set_column('C:C', 8)
@@ -140,16 +156,12 @@ MD5-хэшам.
         ws_detailed.freeze_panes('A2')
 
         # Table: Details
-        captions = (
-            'Оригинальный файл',
-            'Дублирующий файл',
-            'Размер',
-            'Уникальный хэш файла',
-        )
+        captions = (text.xls.cap1_A1, text.xls.cap1_B1,
+                    text.xls.cap1_C1, text.xls.cap1_D1, )
         if args.t:
             ws_detailed.set_column('E:E', 40)
             ws_detailed.autofilter('A1:E1')
-            captions += ('Тип файла',)
+            captions += (text.xls.cap1_E1,)
 
         ws_detailed.write_row('A1', captions, stl_cap)
         for row, duplicate in enumerate(duplicates, 1):
@@ -167,13 +179,8 @@ MD5-хэшам.
         ws_summary.set_column('F:F', 2)
 
         # Table: Summary
-        captions = (
-            'Файлов всего',
-            'Занято всего',
-            'Дубликатов',
-            'Занято дубликатами',
-            'Процент дубликатов',
-        )
+        captions = (text.xls.cap2_A1, text.xls.cap2_A2, text.xls.cap2_A3,
+                    text.xls.cap2_A4, text.xls.cap2_A5, )
         ws_summary.write_column('A1', captions, stl_cap_left)
         ws_summary.write(0, 1, f'{result.total_files}', stl_data_cntr)
         ws_summary.write(1, 1, result.hr_total_size, stl_data_cntr)
@@ -182,8 +189,8 @@ MD5-хэшам.
         ws_summary.write(4, 1, result.redundancy_percent, stl_data_cntr_light)
 
         # Table: Top 10 Duplicates
-        ws_summary.write(0, 3, 'Десятка самых больших дубликатов', stl_cap)
-        ws_summary.write(0, 4, 'Размер', stl_cap)
+        ws_summary.write('D1', text.xls.cap3_D1, stl_cap)
+        ws_summary.write('E1', text.xls.cap3_E1, stl_cap)
 
         row = 1
         for file in result.get_top10_duplicates():
@@ -198,11 +205,11 @@ MD5-хэшам.
             ws_summary.set_column('G:G', 60)
             ws_summary.set_column('H:H', 7)
 
-            ws_summary.write(0, 6, 'Дублирующие файлы по типу', stl_cap)
-            ws_summary.write(0, 7, 'Кол-во', stl_cap)
+            ws_summary.write('G1', text.xls.cap4_G1, stl_cap)
+            ws_summary.write('H1', text.xls.cap4_H1, stl_cap)
             for row, file_types in enumerate(result.get_file_types(), 1):
                 ws_summary.write(row, 6, file_types[0], stl_data_left)
                 ws_summary.write(row, 7, file_types[1], stl_data_cntr)
 
     result.print_result()
-    print('\n DONE!')
+    print(f'\n {text.cli.done}!')

@@ -20,11 +20,12 @@ def human_readable_time(eval_time):
 
 
 class Result:
-    def __init__(self):
+    def __init__(self, text):
         self._start_time = time()
         self._files = []
         self._originals = {}
         self._duplicates = []
+        self._text = text
 
     def add_file(self, file):
         self._files.append(file)
@@ -96,12 +97,12 @@ class Result:
     def print_result(self):
         total_time = time() - self._start_time
         summary = {
-            'Total files': self.total_files,
-            'Total size': self.hr_total_size,
-            'Redundancy files': self.redundancy_files,
-            'Redundancy size': self.hr_redundancy_size,
-            'Redundancy percentage': self.redundancy_percent,
-            'Time passed': human_readable_time(total_time),
+            self._text.cli.total_files: self.total_files,
+            self._text.cli.total_size: self.hr_total_size,
+            self._text.cli.dup_files: self.redundancy_files,
+            self._text.cli.dup_size: self.hr_redundancy_size,
+            self._text.cli.dup_percent: self.redundancy_percent,
+            self._text.cli.time_passed: human_readable_time(total_time),
         }
 
         captions_length = len(max(summary, key=len))
