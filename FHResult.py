@@ -23,22 +23,21 @@ def human_readable_time(eval_time):
 class Result:
     def __init__(self, text):
         self._start_time = time()
-        self._files = []
         self._originals = {}
-        self._duplicates = []
+        self._duplicates = {}
         self._text = text
 
     def add_file(self, file):
-        self._files.append(file)
         self._check_duplicate(file)
 
     @property
     def total_files(self):
-        return len(self._files)
+        return len(self._originals) + len(self._duplicates)
 
     @property
     def total_size(self):
-        return sum([file.size for file in self._files])
+        orig_size = sum([file.size for file in self._originals.values()])
+        return orig_size + self.redundancy_size
 
     @property
     def hr_total_size(self):
@@ -50,7 +49,7 @@ class Result:
 
     @property
     def redundancy_size(self):
-        return sum([file.size for file in self._duplicates])
+        return sum([file.size for file in self._duplicates.values()])
 
     @property
     def hr_redundancy_size(self):
@@ -64,26 +63,31 @@ class Result:
         return '0 %'
 
     def _check_duplicate(self, file):
-        if file.hash in self._originals:
-            orig_file = self._originals[file.hash]
-            if orig_file.ctime < file.ctime:
-                file.original = False
-                self._duplicates.append(file)
+        hash = file.hash
+        if hash in self._originals:
+            orig_file = self._originals[hash]
+            if orig_file.ctime is not None and file.ctime is not None:
+                if orig_file.ctime < file.ctime:
+                    self._duplicates[hash] = file
+                else:
+                    self._duplicates[hash] = orig_file
+                    self._originals[hash] = file
             else:
-                orig_file.original = False
-                self._duplicates.append(orig_file)
-                self._originals[file.hash] = file
+                self._duplicates[hash] = file
         else:
-            self._originals[file.hash] = file
+            self._originals[hash] = file
 
     def get_originals(self):
-        return self._originals
+        return self._originals.values()
 
     def get_duplicates(self):
-        return self._duplicates
+        return self._duplicates.values()
+        
+    def get_orig_path_by_hash(self, hash):
+        return self._originals[hash].full_path
 
     def get_top10_duplicates(self):
-        return sorted(self._duplicates, key=lambda x: x.size, reverse=True)[:9]
+        return sorted(self.get_duplicates(), key=lambda x: x.size, reverse=True)[:9]
 
     def get_top10_size(self):
         top10_size = sum([file.size for file in self.get_top10_duplicates()])
@@ -91,7 +95,7 @@ class Result:
 
     def get_file_types(self):
         file_types = {}
-        for file in self._duplicates:
+        for file in self.get_duplicates():
             file_types[file.ftype] = file_types.get(file.ftype, 0) + 1
         return sorted(file_types.items(), key=lambda x: x[1], reverse=True)
 

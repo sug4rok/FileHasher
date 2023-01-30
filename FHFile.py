@@ -28,7 +28,6 @@ class File:
         self._file_ctime = None
         self._file_type = None
         self._hash = None
-        self._original = True
 
         self._set_file_size()
         self._set_file_ctime()
@@ -66,15 +65,10 @@ class File:
         return self._file_ctime
 
     def _set_file_ctime(self):
-        self._file_ctime = stat(self._full_file_path).st_ctime
-
-    @property
-    def original(self):
-        return self._original
-
-    @original.setter
-    def original(self, is_original):
-        self._original = is_original
+        try:
+            self._file_ctime = stat(self._full_file_path).st_ctime
+        except (FileNotFoundError, OSError):
+            self._file_ctime = None
 
     @property
     def hash(self):
@@ -95,11 +89,14 @@ class File:
         return self._file_type
 
     def _set_file_type(self):
-        with open(self._full_file_path, 'rb', buffering=0) as f:
-            try:
-                self._file_type = magic.from_buffer(f.read(2048))
-            except magic.MagicException:
-                self._file_type = None
+        try:
+            with open(self._full_file_path, 'rb', buffering=0) as f:
+                try:
+                    self._file_type = magic.from_buffer(f.read(2048))
+                except magic.MagicException:
+                    self._file_type = None
+        except (OSError, PermissionError):
+            self._file_type = None
 
     def __str__(self):
         return self.full_path

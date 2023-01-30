@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = f"""\n
 =====================================================================
-FileHasher 2.1.1
+FileHasher 2.1.2
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -97,19 +97,17 @@ Examples:
     result.print_result()
 
     for sf in args.folder:
-        for root, dirs, files in walk(sf):
+        for root, dirs, files in walk(sf, followlinks=False):
             for filename in files:
-                file = File(path.join(root, filename),
-                            hash_alg=args.a,
-                            define_type=args.t)
+                file_path = path.join(root, filename)
+                if path.islink(file_path):
+                    continue
+                file = File(file_path, hash_alg=args.a, define_type=args.t)
                 if file.size:
                     result.add_file(file)
 
                 if result.total_files % args.i == 0:
                     result.print_result()
-
-    originals = result.get_originals()
-    duplicates = result.get_duplicates()
 
     report_filename = get_report_filename(args.folder, args.r)
     with xlsxwriter.Workbook(report_filename) as workbook:
@@ -157,8 +155,9 @@ Examples:
             captions += (text.xls.cap1_E1,)
 
         ws_detailed.write_row('A1', captions, stl_cap)
-        for row, duplicate in enumerate(duplicates, 1):
-            ws_detailed.write(row, 0, originals[duplicate.hash].full_path)
+        for row, duplicate in enumerate(result.get_duplicates(), 1):
+            orig_path = result.get_orig_path_by_hash(duplicate.hash)
+            ws_detailed.write(row, 0, orig_path)
             ws_detailed.write(row, 1, duplicate.full_path)
             ws_detailed.write(row, 2, duplicate.hr_size)
             ws_detailed.write(row, 3, duplicate.hash)
