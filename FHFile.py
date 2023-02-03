@@ -21,7 +21,6 @@ def human_readable_size(file_size):
 
 
 class File:
-
     def __init__(self, full_file_path, hash_alg='sha1', define_type=False):
         self._full_file_path = full_file_path
         self._file_size = 0
