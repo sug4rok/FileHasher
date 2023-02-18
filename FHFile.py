@@ -22,7 +22,7 @@ def human_readable_size(file_size):
 
 class File:
 
-    def __init__(self, full_file_path, hash_alg='sha1', define_type=False):
+    def __init__(self, full_file_path, hash_alg='sha1'):
         self._full_file_path = full_file_path
         self._file_size = 0
         self._file_ctime = None
@@ -37,10 +37,6 @@ class File:
         else:
             self._hash_alg = md5()
         self._block_size = self._hash_alg.block_size * 1024
-        self._set_file_hash()
-
-        if define_type:
-            self._set_file_type()
 
     @property
     def full_path(self):
@@ -74,7 +70,7 @@ class File:
     def hash(self):
         return self._hash
 
-    def _set_file_hash(self):
+    def set_file_hash(self):
         try:
             with open(self._full_file_path, 'rb', buffering=0) as f:
                 while chunk := f.read(self._block_size):
@@ -88,7 +84,7 @@ class File:
     def ftype(self):
         return self._file_type
 
-    def _set_file_type(self):
+    def set_file_type(self):
         try:
             with open(self._full_file_path, 'rb', buffering=0) as f:
                 try:

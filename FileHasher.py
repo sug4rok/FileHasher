@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = f"""\n
 =====================================================================
-FileHasher 2.1.3
+FileHasher 2.1.4
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -102,8 +102,11 @@ Examples:
                 file_path = path.join(root, filename)
                 if path.islink(file_path):
                     continue
-                file = File(file_path, hash_alg=args.a, define_type=args.t)
+                file = File(file_path, hash_alg=args.a)
                 if file.size:
+                    file.set_file_hash()
+                    if(args.t):
+                        file.set_file_type()
                     result.add_file(file)
 
                 if result.total_files % args.i == 0:
