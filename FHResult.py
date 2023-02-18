@@ -21,14 +21,17 @@ def human_readable_time(eval_time):
 
 
 class Result:
-    def __init__(self, text):
+    def __init__(self, text, iters=1000):
         self._start_time = time()
         self._originals = {}
         self._duplicates = {}
         self._text = text
+        self._iters = iters
 
     def add_file(self, file):
         self._check_duplicate(file)
+        if self._check_iters():
+            self.print_result()
 
     @property
     def total_files(self):
@@ -82,7 +85,7 @@ class Result:
 
     def get_duplicates(self):
         return self._duplicates.values()
-        
+
     def get_orig_path_by_hash(self, hash):
         return self._originals[hash].full_path
 
@@ -98,6 +101,9 @@ class Result:
         for file in self.get_duplicates():
             file_types[file.ftype] = file_types.get(file.ftype, 0) + 1
         return sorted(file_types.items(), key=lambda x: x[1], reverse=True)
+
+    def _check_iters(self):
+        return self.total_files % self._iters == 0
 
     def print_result(self):
         total_time = time() - self._start_time
