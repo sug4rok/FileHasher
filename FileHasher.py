@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = f"""\n
 =====================================================================
-FileHasher 2.1.2
+FileHasher 2.1.3
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -186,11 +186,12 @@ Examples:
                          stl_data_bold_cntr_light)
 
         # Table: File Types
-        ws_summary.write('G1', text.xls.cap4_G1, stl_cap)
-        ws_summary.write('H1', text.xls.cap4_H1, stl_cap)
-        for row, file_types in enumerate(result.get_file_types(), 1):
-            ws_summary.write(row, 6, file_types[0], stl_data_left)
-            ws_summary.write(row, 7, file_types[1], stl_data_cntr)
+        if args.t:
+            ws_summary.write('G1', text.xls.cap4_G1, stl_cap)
+            ws_summary.write('H1', text.xls.cap4_H1, stl_cap)
+            for row, file_types in enumerate(result.get_file_types(), 1):
+                ws_summary.write(row, 6, file_types[0], stl_data_left)
+                ws_summary.write(row, 7, file_types[1], stl_data_cntr)
 
         ws_detailed.autofit()
         ws_detailed.set_column('A:B', 60)
