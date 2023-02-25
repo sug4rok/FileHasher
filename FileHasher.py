@@ -1,6 +1,5 @@
 # coding=utf-8
 import argparse
-from asyncio import create_task, run
 from datetime import datetime
 from importlib import import_module
 from os import walk, path, rename
@@ -52,32 +51,13 @@ def get_report_filename(scanning_folders, report_file):
     return report_file
 
 
-async def file_process(file, def_type, result):
-    if file.size:
-        file.set_file_hash()
-        if def_type:
-            file.set_file_type()
-        result.add_file(file)
-
-
-async def folder_process(folders, alg, def_type, result):
-    for sf in folders:
-        for root, dirs, files in walk(sf, followlinks=False):
-            for filename in files:
-                file_path = path.join(root, filename)
-                if path.islink(file_path):
-                    continue
-                file = File(file_path, hash_alg=alg)
-                create_task(file_process(file, def_type, result))
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_help = False
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = f"""\n
 =====================================================================
-FileHasher 2.2.0
+FileHasher 2.1.5
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -113,10 +93,19 @@ Examples:
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
-    result = Result(text, args.i)
+    result = Result(text)
     result.print_result()
 
-    run(folder_process(args.folder, args.a, args.t, result))
+    for sf in args.folder:
+        for root, dirs, files in walk(sf, followlinks=False):
+            for filename in files:
+                file_path = path.join(root, filename)
+                if path.islink(file_path):
+                    continue
+                file = File(file_path, hash_alg=args.a, check_type=args.t)
+                if file.size:
+                    file.set_file_data()
+                    result.add_file(file)
 
     report_filename = get_report_filename(args.folder, args.r)
     with xlsxwriter.Workbook(report_filename) as workbook:

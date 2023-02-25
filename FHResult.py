@@ -1,6 +1,6 @@
 # coding=utf-8
 from os import system
-from time import time
+from time import perf_counter
 
 from FHFile import human_readable_size
 
@@ -22,7 +22,7 @@ def human_readable_time(eval_time):
 
 class Result:
     def __init__(self, text, iters=1000):
-        self._start_time = time()
+        self._start_time = perf_counter()
         self._originals = {}
         self._duplicates = {}
         self._text = text
@@ -30,7 +30,7 @@ class Result:
 
     def add_file(self, file):
         self._check_duplicate(file)
-        if self._check_iters():
+        if self.total_files % self._iters == 0:
             self.print_result()
 
     @property
@@ -90,7 +90,8 @@ class Result:
         return self._originals[hash].full_path
 
     def get_top10_duplicates(self):
-        return sorted(self.get_duplicates(), key=lambda x: x.size, reverse=True)[:9]
+        return sorted(self.get_duplicates(),
+                      key=lambda x: x.size, reverse=True)[:9]
 
     def get_top10_size(self):
         top10_size = sum([file.size for file in self.get_top10_duplicates()])
@@ -102,11 +103,8 @@ class Result:
             file_types[file.ftype] = file_types.get(file.ftype, 0) + 1
         return sorted(file_types.items(), key=lambda x: x[1], reverse=True)
 
-    def _check_iters(self):
-        return self.total_files % self._iters == 0
-
     def print_result(self):
-        total_time = time() - self._start_time
+        total_time = perf_counter() - self._start_time
         summary = {
             self._text.cli.total_files: self.total_files,
             self._text.cli.total_size: self.hr_total_size,
