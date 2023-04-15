@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_help = False
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
-    parser.description = f"""\n
+    parser.description = """\n
 =====================================================================
 FileHasher 2.1.5
 
