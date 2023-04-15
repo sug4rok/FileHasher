@@ -24,8 +24,8 @@ class NestedNamespace(SimpleNamespace):
 def get_report_filename(scanning_folders, report_file):
     if report_file is None:
         report_file = []
-        for sf in scanning_folders:
-            report_file.append(path.basename(sf.rstrip('\\').rstrip('/')))
+        for scanfold in scanning_folders:
+            report_file.append(path.basename(scanfold.rstrip('\\').rstrip('/')))
         report_file = f'.\\{"_".join(report_file)}.xlsx'
     else:
         if not path.dirname(report_file):
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
     parser.description = """\n
 =====================================================================
-FileHasher 2.1.5
+FileHasher 2.1.6
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -97,7 +97,7 @@ Examples:
     result.print_result()
 
     for sf in args.folder:
-        for root, dirs, files in walk(sf, followlinks=False):
+        for root, dirs, files in walk(sf):
             for filename in files:
                 file_path = path.join(root, filename)
                 if path.islink(file_path):

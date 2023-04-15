@@ -66,19 +66,19 @@ class Result:
         return '0 %'
 
     def _check_duplicate(self, file):
-        hash = file.hash
-        if hash in self._originals:
-            orig_file = self._originals[hash]
+        filehash = file.hash
+        if filehash in self._originals:
+            orig_file = self._originals[filehash]
             if orig_file.ctime is not None and file.ctime is not None:
                 if orig_file.ctime < file.ctime:
-                    self._duplicates[hash] = file
+                    self._duplicates[filehash] = file
                 else:
-                    self._duplicates[hash] = orig_file
-                    self._originals[hash] = file
+                    self._duplicates[filehash] = orig_file
+                    self._originals[filehash] = file
             else:
-                self._duplicates[hash] = file
+                self._duplicates[filehash] = file
         else:
-            self._originals[hash] = file
+            self._originals[filehash] = file
 
     def get_originals(self):
         return self._originals.values()
@@ -86,8 +86,8 @@ class Result:
     def get_duplicates(self):
         return self._duplicates.values()
 
-    def get_orig_path_by_hash(self, hash):
-        return self._originals[hash].full_path
+    def get_orig_path_by_hash(self, filehash):
+        return self._originals[filehash].full_path
 
     def get_top10_duplicates(self):
         return sorted(self.get_duplicates(),

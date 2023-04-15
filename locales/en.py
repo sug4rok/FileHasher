@@ -1,3 +1,4 @@
+# coding=utf-8
 text = {
     'cli': {
         'total_files': 'Total files',
@@ -10,7 +11,7 @@ text = {
     },
     'xls': {
         'ws_detailed': 'Detailed',
-        'ws_summary': 'Summary',    
+        'ws_summary': 'Summary',
         'cap1_A1': 'Original file',
         'cap1_B1': 'Duplicate file',
         'cap1_C1': 'Size',

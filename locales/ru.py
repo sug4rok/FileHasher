@@ -1,3 +1,4 @@
+# coding=utf-8
 text = {
     'cli': {
         'total_files': 'Файлов всего',

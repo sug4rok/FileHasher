@@ -54,7 +54,7 @@ class File:
     def _set_file_size(self):
         try:
             self._file_size = stat(self._full_file_path).st_size
-        except (OSError):
+        except OSError:
             self._file_size = 0
 
     @property
@@ -64,7 +64,7 @@ class File:
     def _set_file_ctime(self):
         try:
             self._file_ctime = stat(self._full_file_path).st_ctime
-        except (OSError):
+        except OSError:
             self._file_ctime = None
 
     @property
@@ -76,7 +76,7 @@ class File:
             with open(self._full_file_path, 'rb', buffering=0) as f:
                 while chunk := f.read(self._block_size):
                     self._hash_alg.update(chunk)
-        except (OSError):
+        except OSError:
             self._hash = None
 
         self._hash = self._hash_alg.hexdigest()
@@ -92,12 +92,12 @@ class File:
                     self._file_type = magic.from_buffer(f.read(2048))
                 except magic.MagicException:
                     self._file_type = None
-        except (OSError):
+        except OSError:
             self._file_type = None
 
     def set_file_data(self):
         self._set_file_hash()
-        if (self._check_type):
+        if self._check_type:
             self._set_file_type()
 
     def __str__(self):
