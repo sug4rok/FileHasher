@@ -58,7 +58,7 @@ if __name__ == '__main__':
     parser.description = f"""\n
 {ASCII_TITLE}
 ===============================================================
-FileHasher 2.1.7
+FileHasher 2.1.8
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -94,7 +94,7 @@ Examples:
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
-    result = Result(text)
+    result = Result(text, iters=args.i)
     result.print_result()
 
     for sf in args.folder:
