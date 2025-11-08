@@ -13,13 +13,12 @@ ASCII_TITLE = r"""
 
 
 def human_readable_time(eval_time):
-    eval_time = round(eval_time, 1)
-    if eval_time < 60:
-        return f'{eval_time} s'
-    eval_time = round((eval_time / 60.0), 1)
-    if 60 > eval_time >= 1:
-        return f'{eval_time} m'
-    return f'{round((eval_time / 60.0), 1)} h'
+    """Convert seconds into a human-readable string (s, m, h, d)."""
+    for unit, limit in (('s', 60.0), ('m', 60.0), ('h', 24.0)):
+        if eval_time < limit:
+            return f'{eval_time:.1f} {unit}'
+        eval_time /= limit
+    return f'{eval_time:.1f} d'
 
 
 class Result:
