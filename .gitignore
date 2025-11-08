@@ -132,3 +132,4 @@ scripts/
 development/
 pyvenv.cfg
 .idea
+CACHEDIR.TAG

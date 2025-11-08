@@ -4,10 +4,12 @@ from time import perf_counter
 
 from FHFile import human_readable_size
 
-ASCII_TITLE = "  ___ _ _     _  _         _             \n" \
-              " | __(_) |___| || |__ _ __| |_  ___ _ _  \n" \
-              " | _|| | / -_) __ / _` (_-< ' \/ -_) '_| \n" \
-              " |_| |_|_\___|_||_\__,_/__/_||_\___|_|   \n"
+ASCII_TITLE = r"""
+  ___ _ _     _  _         _ 
+ | __(_) |___| || |__ _ __| |_  ___ _ _
+ | _|| | / -_) __ / _` (_-< ' \/ -_) '_|
+ |_| |_|_\___|_||_\__,_/__/_||_\___|_|
+"""
 
 
 def human_readable_time(eval_time):

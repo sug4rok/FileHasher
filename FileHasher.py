@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import xlsxwriter
 from FHFile import File
-from FHResult import Result
+from FHResult import ASCII_TITLE, Result
 
 
 class NestedNamespace(SimpleNamespace):
@@ -55,13 +55,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_help = False
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
-    parser.description = """\n
-=====================================================================
-FileHasher 2.1.6
+    parser.description = f"""\n
+{ASCII_TITLE}
+===============================================================
+FileHasher 2.1.7
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
-====================================================================="""
+==============================================================="""
     parser.epilog = u"""
 Examples:
   FileHasher --help
