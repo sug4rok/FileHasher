@@ -6,18 +6,16 @@ import magic
 
 
 def human_readable_size(file_size):
+    '''Convert a file size in bytes to a human-readable string.'''
     if file_size < 1024:
         return f'{file_size} B'
-    file_size = round(file_size / 1024, 1)
-    if 1024 > file_size >= 1:
-        return f'{file_size} kB'
-    file_size = round(file_size / 1024, 1)
-    if 1024 > file_size >= 1:
-        return f'{file_size} MB'
-    file_size = round(file_size / 1024, 1)
-    if 1024 > file_size >= 1:
-        return f'{file_size} GB'
-    return f'{round(file_size / 1024, 1)} TB'
+
+    units = ['kB', 'MB', 'GB', 'TB', 'PB']
+    for unit in units:
+        file_size /= 1024.0
+        if file_size < 1024:
+            return f'{file_size:.1f} {unit}'
+    return f'{file_size:.1f} {units[-1]}'
 
 
 class File:
