@@ -62,7 +62,7 @@ if __name__ == '__main__':
     parser.description = f'''\n
 {ASCII_TITLE}
 ===============================================================
-FileHasher 2.3.0
+FileHasher 2.3.1
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.

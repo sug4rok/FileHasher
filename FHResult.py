@@ -130,7 +130,7 @@ class Result:
         print(ASCII_TITLE)
 
         for caption, value in summary.items():
-            if value:
+            if value is not None:
                 print(f' {caption.ljust(captions_length)}: {value}')
             else:
                 print(f' {caption.ljust(captions_length)}')
