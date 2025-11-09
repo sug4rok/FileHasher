@@ -9,6 +9,8 @@ from FHUtils import ASCII_TITLE, human_readable_time, human_readable_size
 class Result:
     def __init__(self, text, iters=1000, extend_info=False):
         self._start_time = perf_counter()
+        self._total_files = 0
+        self._total_size = 0
         self._originals = {}
         self._duplicates = {}
         self._text = text.cli
@@ -16,38 +18,35 @@ class Result:
         self._extend_info = extend_info
 
         self._summary_keys = [
-            "total_files",
-            "total_size",
-            "dup_files",
-            "dup_size",
-            "dup_percent",
-            "time_passed",
+            'total_files',
+            'total_size',
+            'dup_files',
+            'dup_size',
+            'dup_percent',
+            'time_passed',
         ]
         if self._extend_info:
             self._summary_keys.extend([
-                "mem_orig_size",
-                "mem_dup_size",
+                'mem_orig_size',
+                'mem_dup_size',
             ])
         captions = [getattr(self._text, key) for key in self._summary_keys]
         self._max_caption = len(max(captions, key=len))
 
     def add_file(self, file):
+        self._total_files += 1
+        self._total_size += file.size
         self._check_duplicate(file)
-        if self.total_files % self._iters == 0:
+        if self._total_files % self._iters == 0:
             self.print_result()
 
     @property
     def total_files(self):
-        return len(self._originals) + len(self._duplicates)
-
-    @property
-    def total_size(self):
-        orig_size = sum([file.size for file in self._originals.values()])
-        return orig_size + self.redundancy_size
+        return self._total_files
 
     @property
     def hr_total_size(self):
-        return human_readable_size(self.total_size)
+        return human_readable_size(self._total_size)
 
     @property
     def redundancy_files(self):
@@ -55,7 +54,7 @@ class Result:
 
     @property
     def redundancy_size(self):
-        return sum([file.size for file in self._duplicates.values()])
+        return sum(file.size for file in self._duplicates.values())
 
     @property
     def hr_redundancy_size(self):
@@ -63,10 +62,9 @@ class Result:
 
     @property
     def redundancy_percent(self):
-        if self.total_size:
-            rp = round(100.0 * self.redundancy_size / self.total_size, 1)
-            return f'{rp} %'
-        return '0 %'
+        if not self._total_size:
+            return '0 %'
+        return f'{(100.0 * self.redundancy_size / self._total_size):.1f} %'
 
     def _check_duplicate(self, file):
         '''
