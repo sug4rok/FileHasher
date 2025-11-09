@@ -57,27 +57,31 @@ class File:
         return self._hash
 
     def _set_file_hash(self):
+        '''
+        Compute the file hash efficiently using memory-friendly chunking.
+        '''
         try:
             with open(self._full_file_path, 'rb', buffering=0) as f:
-                while chunk := f.read(self._block_size):
+                for chunk in iter(lambda: f.read(self._block_size), b''):
                     self._hash_alg.update(chunk)
-        except OSError:
+            self._hash = self._hash_alg.hexdigest()
+        except (OSError, ValueError):
             self._hash = None
-
-        self._hash = self._hash_alg.hexdigest()
 
     @property
     def ftype(self):
         return self._file_type
 
     def _set_file_type(self):
+        '''
+        Detect file type using libmagic with minimal reading.
+        '''
         try:
+            # Read a small initial portion — enough for most file detections
             with open(self._full_file_path, 'rb', buffering=0) as f:
-                try:
-                    self._file_type = magic.from_buffer(f.read(2048))
-                except magic.MagicException:
-                    self._file_type = None
-        except OSError:
+                header = f.read(2048)
+            self._file_type = magic.from_buffer(header, mime=False)
+        except (OSError, magic.MagicException):
             self._file_type = None
 
     def set_file_data(self):
