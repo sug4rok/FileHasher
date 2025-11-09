@@ -15,6 +15,22 @@ class Result:
         self._iters = iters
         self._extend_info = extend_info
 
+        self._summary_keys = [
+            "total_files",
+            "total_size",
+            "dup_files",
+            "dup_size",
+            "dup_percent",
+            "time_passed",
+        ]
+        if self._extend_info:
+            self._summary_keys.extend([
+                "mem_orig_size",
+                "mem_dup_size",
+            ])
+        captions = [getattr(self._text, key) for key in self._summary_keys]
+        self._max_caption = len(max(captions, key=len))
+
     def add_file(self, file):
         self._check_duplicate(file)
         if self.total_files % self._iters == 0:
@@ -135,10 +151,8 @@ class Result:
                 (self._text.mem_dup_size, self.mem_dup_size),
             ])
 
-        max_caption = max(len(caption) for caption, _ in summary)
-
         for caption, value in summary:
             if value is None:
                 print(f' {caption}')
             else:
-                print(f' {caption.ljust(max_caption)}: {value}')
+                print(f' {caption.ljust(self._max_caption)}: {value}')
