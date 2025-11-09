@@ -1,33 +1,19 @@
 # coding=utf-8
+from sys import getsizeof
 from os import system
 from time import perf_counter
 
-from FHFile import human_readable_size
-
-ASCII_TITLE = r"""
-  ___ _ _     _  _         _ 
- | __(_) |___| || |__ _ __| |_  ___ _ _
- | _|| | / -_) __ / _` (_-< ' \/ -_) '_|
- |_| |_|_\___|_||_\__,_/__/_||_\___|_|
-"""
-
-
-def human_readable_time(eval_time):
-    """Convert seconds into a human-readable string (s, m, h, d)."""
-    for unit, limit in (('s', 60.0), ('m', 60.0), ('h', 24.0)):
-        if eval_time < limit:
-            return f'{eval_time:.1f} {unit}'
-        eval_time /= limit
-    return f'{eval_time:.1f} d'
+from FHUtils import ASCII_TITLE, human_readable_time, human_readable_size
 
 
 class Result:
-    def __init__(self, text, iters=1000):
+    def __init__(self, text, iters=1000, extend_info=False):
         self._start_time = perf_counter()
         self._originals = {}
         self._duplicates = {}
         self._text = text
         self._iters = iters
+        self._extend_info = extend_info
 
     def add_file(self, file):
         self._check_duplicate(file)
@@ -67,19 +53,31 @@ class Result:
         return '0 %'
 
     def _check_duplicate(self, file):
+        '''
+        Check whether a file is a duplicate and update the originals/duplicates
+        dictionaries.
+        '''
         filehash = file.hash
-        if filehash in self._originals:
-            orig_file = self._originals[filehash]
-            if orig_file.ctime is not None and file.ctime is not None:
-                if orig_file.ctime < file.ctime:
-                    self._duplicates[filehash] = file
-                else:
-                    self._duplicates[filehash] = orig_file
-                    self._originals[filehash] = file
+        orig_file = self._originals.get(filehash)
+
+        # If this is the first file with this hash, store it as an original
+        if orig_file is None:
+            self._originals[filehash] = file
+            return
+
+        # If both files have creation times, choose the older one as
+        # the original
+        if orig_file.ctime and file.ctime:
+            if file.ctime < orig_file.ctime:
+                self._duplicates[filehash] = orig_file
+                self._originals[filehash] = file
             else:
                 self._duplicates[filehash] = file
-        else:
-            self._originals[filehash] = file
+            return
+
+        # If the creation time is unknown, we simply treat the new file as
+        # a duplicate.
+        self._duplicates[filehash] = file
 
     def get_originals(self):
         return self._originals.values()
@@ -104,6 +102,14 @@ class Result:
             file_types[file.ftype] = file_types.get(file.ftype, 0) + 1
         return sorted(file_types.items(), key=lambda x: x[1], reverse=True)
 
+    @property
+    def mem_orig_size(self):
+        return human_readable_size(getsizeof(self._originals))
+
+    @property
+    def mem_dup_size(self):
+        return human_readable_size(getsizeof(self._duplicates))
+
     def print_result(self):
         total_time = perf_counter() - self._start_time
         summary = {
@@ -114,10 +120,17 @@ class Result:
             self._text.cli.dup_percent: self.redundancy_percent,
             self._text.cli.time_passed: human_readable_time(total_time),
         }
+        if self._extend_info:
+            summary[f'[{self._text.cli.mem_usage_title}]'] = None
+            summary[self._text.cli.mem_orig_size] = self.mem_orig_size
+            summary[self._text.cli.mem_dup_size] = self.mem_dup_size
 
         captions_length = len(max(summary, key=len))
         system('cls')
         print(ASCII_TITLE)
 
         for caption, value in summary.items():
-            print(f' {caption.ljust(captions_length)}: {value}')
+            if value:
+                print(f' {caption.ljust(captions_length)}: {value}')
+            else:
+                print(f' {caption.ljust(captions_length)}')

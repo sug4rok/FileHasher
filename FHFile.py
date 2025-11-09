@@ -1,25 +1,12 @@
 # coding=utf-8
 from hashlib import sha1, md5
 from os import stat
-
 import magic
 
-
-def human_readable_size(file_size):
-    '''Convert a file size in bytes to a human-readable string.'''
-    if file_size < 1024:
-        return f'{file_size} B'
-
-    units = ['kB', 'MB', 'GB', 'TB', 'PB']
-    for unit in units:
-        file_size /= 1024.0
-        if file_size < 1024:
-            return f'{file_size:.1f} {unit}'
-    return f'{file_size:.1f} {units[-1]}'
+from FHUtils import human_readable_size
 
 
 class File:
-
     def __init__(self, full_file_path, hash_alg='sha1', check_type=False):
         self._full_file_path = full_file_path
         self._file_size = 0

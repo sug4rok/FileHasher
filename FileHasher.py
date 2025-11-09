@@ -5,10 +5,11 @@ from importlib import import_module
 from os import walk, path, rename, getcwd
 from sys import exit
 from types import SimpleNamespace
-
 import xlsxwriter
+
 from FHFile import File
-from FHResult import ASCII_TITLE, Result
+from FHResult import Result
+from FHUtils import ASCII_TITLE
 
 
 class NestedNamespace(SimpleNamespace):
@@ -22,10 +23,10 @@ class NestedNamespace(SimpleNamespace):
 
 
 def get_report_filename(scanning_folders, report_file):
-    """
+    '''
     Generate a valid .xlsx report filename based on scan folders or
     user input.
-    """
+    '''
     curr_dirname = getcwd()
     if not report_file:
         # Generate the report file name from the names of the
@@ -33,7 +34,7 @@ def get_report_filename(scanning_folders, report_file):
         report_file = []
         for scanfold in scanning_folders:
             report_file.append(path.basename(scanfold.rstrip('/\\')))
-        report_file = path.join(curr_dirname, f'{"_".join(report_file)}.xlsx')
+        report_file = path.join(curr_dirname, f'{'_'.join(report_file)}.xlsx')
     else:
         # Add current directory if path is not specified
         dirname = path.dirname(report_file)
@@ -58,20 +59,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_help = False
     parser.formatter_class = argparse.RawDescriptionHelpFormatter
-    parser.description = f"""\n
+    parser.description = f'''\n
 {ASCII_TITLE}
 ===============================================================
-FileHasher 2.2.0
+FileHasher 2.3.0
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
-==============================================================="""
-    parser.epilog = u"""
+==============================================================='''
+    parser.epilog = u'''
 Examples:
   FileHasher --help
   FileHasher d:\\folder -r result.csv -a md5
   FileHasher \\\\shared\\folder -i 100 -t
-  FileHasher d:\\folder1 \\\\shared\\folder2"""
+  FileHasher d:\\folder1 \\\\shared\\folder2'''
 
     parser.add_argument('folder', metavar='FOLDER', type=str, nargs='+',
                         help='The path to the folder, including the name\
@@ -79,9 +80,15 @@ Examples:
                         Several folders can be specified (see Examples)')
     parser.add_argument('-a', choices=['sha1', 'md5'], default='sha1',
                         help=u'Hash algorithm sha1 (default) or md5')
+    parser.add_argument('-e', action='store_true',
+                        help=u'Display advanced information such as memory\
+                        consumption')
     parser.add_argument('-i', metavar='NUMBER', type=int, default=1000,
                         help=u'After how many scanned files an intermediate\
                         result should be shown')
+    parser.add_argument('-l', choices=['en', 'ru'], default='ru',
+                        help=u'Language of output to the console and\
+                        to the report file')
     parser.add_argument('-r', metavar='RESULT.XLSX', required=False, type=str,
                         help=u'Excel file with the result. If it was not\
                         specified, it is created in the program folder with\
@@ -89,16 +96,13 @@ Examples:
     parser.add_argument('-t', action='store_true',
                         help=u'Detect file type, e.g. "Microsoft Excel 2007+"\
                         or "ISO 9660 CD-ROM"')
-    parser.add_argument('-l', choices=['en', 'ru'], default='ru',
-                        help=u'Language of output to the console and\
-                        to the report file')
 
     args = parser.parse_args()
     report_filename = get_report_filename(args.folder, args.r)
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
-    result = Result(text, iters=args.i)
+    result = Result(text, iters=args.i, extend_info=args.e)
     result.print_result()
 
     for sf in args.folder:
