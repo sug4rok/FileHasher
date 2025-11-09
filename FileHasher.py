@@ -2,7 +2,7 @@
 import argparse
 from datetime import datetime
 from importlib import import_module
-from os import walk, path, rename
+from os import walk, path, rename, getcwd
 from sys import exit
 from types import SimpleNamespace
 
@@ -22,31 +22,34 @@ class NestedNamespace(SimpleNamespace):
 
 
 def get_report_filename(scanning_folders, report_file):
-    if report_file is None:
+    """
+    Generate a valid .xlsx report filename based on scan folders or
+    user input.
+    """
+    curr_dirname = getcwd()
+    if not report_file:
+        # Generate the report file name from the names of the
+        # scanned folders
         report_file = []
         for scanfold in scanning_folders:
-            report_file.append(path.basename(scanfold.rstrip('\\').rstrip('/')))
-        report_file = f'.\\{"_".join(report_file)}.xlsx'
+            report_file.append(path.basename(scanfold.rstrip('/\\')))
+        report_file = path.join(curr_dirname, f'{"_".join(report_file)}.xlsx')
     else:
-        if not path.dirname(report_file):
-            report_file = path.join('.', report_file)
-
-        if not path.exists(path.dirname(report_file)):
-            print(f'\nFolder {path.dirname(report_file)} does not exist\n')
-            exit()
-
-    rp_name, rp_ext = path.splitext(report_file)
-    if rp_ext != '.xlsx':
-        rp_ext = '.xlsx'
-        report_file = rp_name + rp_ext
+        # Add current directory if path is not specified
+        dirname = path.dirname(report_file)
+        if not path.exists(dirname):
+            dirname = curr_dirname
+        # Make sure the extension is .xlsx
+        report_file = path.splitext(report_file)[0] + '.xlsx'
+        report_file = path.join(dirname, path.basename(report_file))
 
     # If the report file with the specified name already exists,
     # rename the old file by adding the date/time of its change
     # in the file name.
     if path.isfile(report_file):
-        rp_modified = datetime.fromtimestamp(path.getmtime(report_file))
-        rp_modified = rp_modified.strftime('%Y-%m-%d_%H%M%S')
-        rename(report_file, f'{rp_name}_{rp_modified}{rp_ext}')
+        mtime = datetime.fromtimestamp(path.getmtime(report_file))
+        mtime = mtime.strftime('%Y-%m-%d_%H%M%S')
+        rename(report_file, f'{path.splitext(report_file)[0]}_{mtime}.xlsx')
 
     return report_file
 
@@ -58,7 +61,7 @@ if __name__ == '__main__':
     parser.description = f"""\n
 {ASCII_TITLE}
 ===============================================================
-FileHasher 2.1.10
+FileHasher 2.2.0
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -91,6 +94,7 @@ Examples:
                         to the report file')
 
     args = parser.parse_args()
+    report_filename = get_report_filename(args.folder, args.r)
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
@@ -108,7 +112,6 @@ Examples:
                     file.set_file_data()
                     result.add_file(file)
 
-    report_filename = get_report_filename(args.folder, args.r)
     with xlsxwriter.Workbook(report_filename) as workbook:
         clr_purple = '#D2D2FF'
         clr_ping = '#FFCECE'
@@ -210,3 +213,4 @@ Examples:
 
     result.print_result()
     print(f'\n {text.cli.done}!')
+    print(f' {text.cli.report_created} {report_filename}')

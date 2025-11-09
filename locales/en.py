@@ -8,6 +8,7 @@ text = {
         'dup_percent': 'Redundancy percentage',
         'time_passed': 'Time passed',
         'done': 'DONE',
+        'report_created': 'A detailed report can be found here:',
     },
     'xls': {
         'ws_detailed': 'Detailed',
