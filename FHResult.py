@@ -11,7 +11,7 @@ class Result:
         self._start_time = perf_counter()
         self._originals = {}
         self._duplicates = {}
-        self._text = text
+        self._text = text.cli
         self._iters = iters
         self._extend_info = extend_info
 
@@ -111,26 +111,34 @@ class Result:
         return human_readable_size(getsizeof(self._duplicates))
 
     def print_result(self):
-        total_time = perf_counter() - self._start_time
-        summary = {
-            self._text.cli.total_files: self.total_files,
-            self._text.cli.total_size: self.hr_total_size,
-            self._text.cli.dup_files: self.redundancy_files,
-            self._text.cli.dup_size: self.hr_redundancy_size,
-            self._text.cli.dup_percent: self.redundancy_percent,
-            self._text.cli.time_passed: human_readable_time(total_time),
-        }
-        if self._extend_info:
-            summary[f'[{self._text.cli.mem_usage_title}]'] = None
-            summary[self._text.cli.mem_orig_size] = self.mem_orig_size
-            summary[self._text.cli.mem_dup_size] = self.mem_dup_size
-
-        captions_length = len(max(summary, key=len))
+        '''
+        Print a formatted summary of the current results.
+        '''
         system('cls')
         print(ASCII_TITLE)
 
-        for caption, value in summary.items():
-            if value is not None:
-                print(f' {caption.ljust(captions_length)}: {value}')
+        total_time = human_readable_time(perf_counter() - self._start_time)
+
+        summary = [
+            (self._text.total_files, self.total_files),
+            (self._text.total_size, self.hr_total_size),
+            (self._text.dup_files, self.redundancy_files),
+            (self._text.dup_size, self.hr_redundancy_size),
+            (self._text.dup_percent, self.redundancy_percent),
+            (self._text.time_passed, total_time),
+        ]
+
+        if self._extend_info:
+            summary.extend([
+                (f'[ {self._text.mem_usage_title} ]', None),
+                (self._text.mem_orig_size, self.mem_orig_size),
+                (self._text.mem_dup_size, self.mem_dup_size),
+            ])
+
+        max_caption = max(len(caption) for caption, _ in summary)
+
+        for caption, value in summary:
+            if value is None:
+                print(f' {caption}')
             else:
-                print(f' {caption.ljust(captions_length)}')
+                print(f' {caption.ljust(max_caption)}: {value}')
