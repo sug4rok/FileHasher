@@ -56,38 +56,42 @@ class File:
     def hash(self):
         return self._hash
 
-    def _set_file_hash(self):
-        '''
-        Compute the file hash efficiently using memory-friendly chunking.
-        '''
-        try:
-            with open(self._full_file_path, 'rb', buffering=0) as f:
-                for chunk in iter(lambda: f.read(self._block_size), b''):
-                    self._hash_alg.update(chunk)
-            self._hash = self._hash_alg.hexdigest()
-        except (OSError, ValueError):
-            self._hash = None
-
     @property
     def ftype(self):
         return self._file_type
 
-    def _set_file_type(self):
+    def _process_file(self):
         '''
-        Detect file type using libmagic with minimal reading.
+        Compute hash and optionally detect file type in one file read.
         '''
         try:
-            # Read a small initial portion — enough for most file detections
-            with open(self._full_file_path, 'rb', buffering=0) as f:
+            with open(self._full_file_path, 'rb') as f:
+                # Read the initial header (enough for type detection)
                 header = f.read(2048)
-            self._file_type = magic.from_buffer(header, mime=False)
-        except (OSError, magic.MagicException):
-            self._file_type = None
+
+                # Detect file type if enabled
+                if self._check_type:
+                    try:
+                        self._file_type = magic.from_buffer(header, mime=False)
+                    except magic.MagicException:
+                        self._file_type = None
+
+                # Feed the header into the hash algorithm
+                self._hash_alg.update(header)
+
+                # Continue reading and hashing the rest of the file
+                for chunk in iter(lambda: f.read(self._block_size), b''):
+                    self._hash_alg.update(chunk)
+
+            self._hash = self._hash_alg.hexdigest()
+
+        except (OSError, ValueError):
+            self._hash = None
+            if self._check_type:
+                self._file_type = None
 
     def set_file_data(self):
-        self._set_file_hash()
-        if self._check_type:
-            self._set_file_type()
+        self._process_file()
 
     def __str__(self):
         return self.full_path
