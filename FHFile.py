@@ -87,8 +87,7 @@ class File:
 
         except (OSError, ValueError):
             self._hash = None
-            if self._check_type:
-                self._file_type = None
+            self._file_type = None
 
     def set_file_data(self):
         self._process_file()

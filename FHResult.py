@@ -13,7 +13,7 @@ class Result:
         self._total_size = 0
         self._originals = {}
         self._duplicates = {}
-        self._text = text.cli
+        self._text = text
         self._iters = iters
         self._extend_info = extend_info
 
