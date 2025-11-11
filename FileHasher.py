@@ -4,6 +4,7 @@ from datetime import datetime
 from importlib import import_module
 from os import scandir, path, rename, getcwd
 from sys import exit
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from types import SimpleNamespace
 import xlsxwriter
 
@@ -185,61 +186,105 @@ def generate_report(report_filename, text, result, args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_help = False
-    parser.formatter_class = argparse.RawDescriptionHelpFormatter
+    parser.formatter_class = argparse.RawTextHelpFormatter
     parser.description = f'''\n
 {ASCII_TITLE}
-===============================================================
-FileHasher 2.3.9
+=============================================================================
+FileHasher 2.4.0
 
-The program to search for duplicate files in a specified folder
-by their SHA1 or MD5 hashes.
-==============================================================='''
+The program to search for duplicate files in a specified folder by their SHA1
+or MD5 hashes.
+=============================================================================
+'''
     parser.epilog = u'''
 Examples:
-  FileHasher --help
-  FileHasher d:\\folder -r result.csv -a md5
-  FileHasher \\\\shared\\folder -i 100 -t
-  FileHasher d:\\folder1 \\\\shared\\folder2'''
+
+  > FileHasher --help
+
+    Displays this help message.
+
+  > FileHasher d:\\folder -r result.csv -a md5
+
+    Scans the folder d:\\folder for duplicate files using the MD5 hash
+    algorithm instead of the default SHA1.
+
+    The results are saved to an Excel report file named result.xlsx
+    (note: even if .csv is specified, the program automatically generates
+    .xlsx format).
+
+  > FileHasher \\\\shared\\folder -i 100 -t
+
+    Scans the shared network folder \\shared\folder for duplicate files.
+
+    The -i 100 option means that intermediate results will be shown every
+    100 processed files.
+
+    The -t option enables file type detection (e.g., "JPEG image data" or
+    "Microsoft Word Document").
+
+  > FileHasher d:\\folder1 \\\\shared\\folder2 -w 4
+
+    Scans two folders simultaneously — one local (d:\\folder1) and one
+    network (\\\\shared\\folder2) — for duplicate files using the default
+    SHA1 hash algorithm.
+
+    The report will automatically be saved as an Excel file named
+    folder1_folder2.xlsx in the current working directory.
+'''
 
     parser.add_argument('folder', metavar='FOLDER', type=str, nargs='+',
-                        help='The path to the folder, including the name\
-                        of the folder itself.\
-                        Several folders can be specified (see Examples)')
+                        help='The path to the folder, including the name of\
+ the folder\nitself. Several folders can be specified (see Examples)')
     parser.add_argument('-a', choices=['sha1', 'md5'], default='sha1',
                         help=u'Hash algorithm sha1 (default) or md5')
     parser.add_argument('-e', action='store_true',
                         help=u'Display advanced information such as memory\
-                        consumption')
+consumption')
     parser.add_argument('-i', metavar='NUMBER', type=int, default=1000,
                         help=u'After how many scanned files an intermediate\
-                        result should be shown')
-    parser.add_argument('-l', choices=['en', 'ru'], default='ru',
+result should be\nshown')
+    parser.add_argument('-l', choices=['en', 'ru'], default='en',
                         help=u'Language of output to the console and\
-                        to the report file')
+to the report file')
     parser.add_argument('-r', metavar='RESULT.XLSX', required=False, type=str,
                         help=u'Excel file with the result. If it was not\
-                        specified, it is created in the program folder with\
-                        the name of the scanned folder')
+specified, it is\ncreated in the program folder with the name of the scanned\
+\nfolder')
     parser.add_argument('-t', action='store_true',
                         help=u'Detect file type, e.g. "Microsoft Excel 2007+"\
-                        or "ISO 9660 CD-ROM"')
+ or\n"ISO 9660 CD-ROM"')
+    parser.add_argument('-w', metavar='WORKERS', type=int, default=2,
+                        help=u'Maximum number of worker threads for file\
+processing')
 
     args = parser.parse_args()
+    iters = args.i
+    if iters < 10 or iters > 10000:
+        iters = 1000
     report_filename = get_report_filename(args.folder, args.r)
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
-    result = Result(text.cli, iters=args.i, extend_info=args.e)
+    result = Result(text.cli, extend_info=args.e)
     result.print_result()
 
+    all_files = []
     for sf in args.folder:
         for file_path in iter_files(sf):
-            if path.islink(file_path):
-                continue
-            file = File(file_path, hash_alg=args.a, check_type=args.t)
-            if file.size:
-                file.set_file_data()
-                result.add_file(file)
+            if not path.islink(file_path):
+                all_files.append(file_path)
+
+    def process_file(file_path):
+        file = File(file_path, hash_alg=args.a, check_type=args.t)
+        if file.size:
+            file.set_file_data()
+            result.add_file(file)
+
+    with ThreadPoolExecutor(max_workers=args.w) as executor:
+        futures = [executor.submit(process_file, fp) for fp in all_files]
+        for i, future in enumerate(as_completed(futures), 1):
+            if result.total_files % iters == 0:
+                result.print_result()
 
     generate_report(report_filename, text.xls, result, args)
 

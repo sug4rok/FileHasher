@@ -4,7 +4,7 @@
 
 ### Usage:
 
-    FileHasher [-h] [-a {sha1,md5}] [-i NUMBER] [-r RESULT.XLSX] [-t] [-l {en,ru}] FOLDER [FOLDER ...]
+    FileHasher [-h] [-a {sha1,md5}] [-e] [-i NUMBER] [-l {en,ru}] [-r RESULT.XLSX] [-t] [-w WORKERS] FOLDER [FOLDER ...]
 
 ### Positional arguments:
 
@@ -19,13 +19,34 @@
 	-l {en,ru}      Language of output to the console and to the report file
 	-r RESULT.XLSX  Excel file with the result. If it was not specified, it is created in the program folder with the name of the scanned folder
 	-t              Detect file type, e.g. "Microsoft Excel 2007+" or "ISO 9660 CD-ROM"
+	-w WORKERS		Maximum number of worker threads for file processing
 
 ### Examples:
 
-    FileHasher --help
-    FileHasher d:\folder -r result.xlsx -a md5
-    FileHasher \\shared\folder -i 100 -t
-    FileHasher d:\folder1 \\shared\folder2 e:\folder3 -e
+	> FileHasher --help
+
+	  Displays this help message.
+
+	> FileHasher d:\folder -r result.csv -a md5
+
+	  Scans the folder d:\folder for duplicate files using the MD5 hash algorithm instead of the default SHA1.
+
+	  The results are saved to an Excel report file named result.xlsx (note: even if .csv is specified, the program automatically generates
+	  .xlsx format).
+
+	> FileHasher \\shared\folder -i 100 -t
+
+	  Scans the shared network folder \\shared\folder for duplicate files.
+
+	  The -i 100 option means that intermediate results will be shown every 100 processed files.
+
+	  The -t option enables file type detection (e.g., "JPEG image data" or "Microsoft Word Document").
+
+	> FileHasher d:\folder1 \\shared\folder2 -w 4
+
+	  Scans two folders simultaneously — one local (d:\folder1) and one network (\\shared\folder2) — for duplicate files using the default SHA1 hash algorithm.
+
+	  The report will automatically be saved as an Excel file named folder1_folder2.xlsx in the current working directory.
 
 ### Dependencies:
 

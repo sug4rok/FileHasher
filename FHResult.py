@@ -7,14 +7,13 @@ from FHUtils import ASCII_TITLE, human_readable_time, human_readable_size
 
 
 class Result:
-    def __init__(self, text, iters=1000, extend_info=False):
+    def __init__(self, text, extend_info=False):
         self._start_time = perf_counter()
         self._total_files = 0
         self._total_size = 0
         self._originals = {}
         self._duplicates = {}
         self._text = text
-        self._iters = iters
         self._extend_info = extend_info
 
         self._summary_keys = [
@@ -37,8 +36,6 @@ class Result:
         self._total_files += 1
         self._total_size += file.size
         self._check_duplicate(file)
-        if self._total_files % self._iters == 0:
-            self.print_result()
 
     @property
     def total_files(self):
