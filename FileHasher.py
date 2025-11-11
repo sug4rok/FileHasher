@@ -56,98 +56,108 @@ def get_report_filename(scanning_folders, report_file):
 
 
 def generate_report(report_filename, text, result, args):
+    '''
+    Generate an Excel report summarizing duplicate file results.
+    '''
     with xlsxwriter.Workbook(report_filename) as workbook:
-        clr_purple = '#D2D2FF'
-        clr_ping = '#FFCECE'
-        stl_cap = workbook.add_format({
-            'bold': True,
-            'bg_color': clr_purple,
-            'align': 'center',
-            'bottom': 1,
-        })
-        stl_cap_left = workbook.add_format({
-            'bold': True,
-            'bg_color': clr_purple,
-            'bottom': 7,
-        })
-        stl_data_cntr = workbook.add_format({
-            'bg_color': clr_purple,
-            'align': 'center',
-            'bottom': 7,
-        })
-        stl_data_cntr_light = workbook.add_format({
-            'bg_color': clr_ping,
-            'align': 'center',
-            'bottom': 7,
-        })
-        stl_data_left = workbook.add_format({
-            'bg_color': clr_purple,
-            'bottom': 7,
-        })
-        stl_data_bold_cntr_light = workbook.add_format({
-            'bold': True,
-            'bg_color': clr_ping,
-            'align': 'center',
-            'top': 1,
-        })
+        # === Colors and styles ===
+        colors = {'purple': '#D2D2FF', 'pink': '#FFCECE'}
+        fmt = {
+            'cap': workbook.add_format({
+                'bold': True,
+                'bg_color': colors['purple'],
+                'align': 'center',
+                'bottom': 1
+             }),
+            'cap_left': workbook.add_format({
+                'bold': True,
+                'bg_color': colors['purple'],
+                'bottom': 7
+            }),
+            'data_cntr': workbook.add_format({
+                'bg_color': colors['purple'],
+                'align': 'center',
+                'bottom': 7
+            }),
+            'data_cntr_light': workbook.add_format({
+               'bg_color': colors['pink'],
+               'align': 'center',
+               'bottom': 7
+            }),
+            'data_left': workbook.add_format({
+                'bg_color': colors['purple'],
+                'bottom': 7
+            }),
+            'data_bold_cntr_light': workbook.add_format({
+                'bold': True,
+                'bg_color': colors['pink'],
+                'align': 'center',
+                'top': 1
+            }),
+        }
 
+        # === Worksheets ===
         ws_detailed = workbook.add_worksheet(text.ws_detailed)
         ws_summary = workbook.add_worksheet(text.ws_summary)
 
-        # Table: Details
-        captions = (text.cap1_A1, text.cap1_B1,
-                    text.cap1_C1, text.cap1_D1,)
+        # === Details Sheet ===
+        captions = (text.cap1_A1, text.cap1_B1, text.cap1_C1, text.cap1_D1,)
         if args.t:
             captions += (text.cap1_E1,)
+        ws_detailed.write_row('A1', captions, fmt['cap'])
 
-        ws_detailed.write_row('A1', captions, stl_cap)
+        for row, dup in enumerate(result.get_duplicates(), start=1):
+            data = [
+                result.get_orig_path_by_hash(dup.hash),
+                dup.full_path,
+                dup.hr_size,
+                dup.hash,
+                dup.ftype
+            ]
+            ws_detailed.write_row(row, 0, data)
 
-        for row, duplicate in enumerate(result.get_duplicates(), 1):
-            orig_path = result.get_orig_path_by_hash(duplicate.hash)
-            ws_detailed.write(row, 0, orig_path)
-            ws_detailed.write(row, 1, duplicate.full_path)
-            ws_detailed.write(row, 2, duplicate.hr_size)
-            ws_detailed.write(row, 3, duplicate.hash)
-            ws_detailed.write(row, 4, duplicate.ftype)
-
-        # Table: Summary
+        # === Summary Sheet ===
         captions = (text.cap2_A1, text.cap2_A2, text.cap2_A3,
-                    text.cap2_A4, text.cap2_A5, )
-        ws_summary.write_column('A1', captions, stl_cap_left)
-        ws_summary.write(0, 1, f'{result.total_files}', stl_data_cntr)
-        ws_summary.write(1, 1, result.hr_total_size, stl_data_cntr)
-        ws_summary.write(2, 1, f'{result.redundancy_files}',
-                         stl_data_cntr_light)
-        ws_summary.write(3, 1, result.hr_redundancy_size, stl_data_cntr_light)
-        ws_summary.write(4, 1, result.redundancy_percent, stl_data_cntr_light)
+                    text.cap2_A4, text.cap2_A5,)
+        summary_values = [
+            str(result.total_files),
+            result.hr_total_size,
+            str(result.redundancy_files),
+            result.hr_redundancy_size,
+            result.redundancy_percent
+        ]
+        ws_summary.write_column('A1', captions, fmt['cap_left'])
+        ws_summary.write_column('B1', summary_values[:2], fmt['data_cntr'])
+        ws_summary.write_column('B3', summary_values[2:],
+                                fmt['data_cntr_light'])
 
-        # Table: Top 10 Duplicates
-        ws_summary.write('D1', text.cap3_D1, stl_cap)
-        ws_summary.write('E1', text.cap3_E1, stl_cap)
+        # === Top 10 Duplicates ===
+        ws_summary.write('D1', text.cap3_D1, fmt['cap'])
+        ws_summary.write('E1', text.cap3_E1, fmt['cap'])
 
         row = 1
         for file in result.get_top10_duplicates():
-            ws_summary.write(row, 3, file.full_path, stl_data_left)
-            ws_summary.write(row, 4, file.hr_size, stl_data_cntr)
+            ws_summary.write(row, 3, file.full_path, fmt['data_left'])
+            ws_summary.write(row, 4, file.hr_size, fmt['data_cntr'])
             row += 1
         ws_summary.write(row, 4, result.get_top10_size(),
-                         stl_data_bold_cntr_light)
+                         fmt['data_bold_cntr_light'])
 
-        # Table: File Types
+        # === File Types (optional) ===
         if args.t:
-            ws_summary.write('G1', text.cap4_G1, stl_cap)
-            ws_summary.write('H1', text.cap4_H1, stl_cap)
-            for row, file_types in enumerate(result.get_file_types(), 1):
-                ws_summary.write(row, 6, file_types[0], stl_data_left)
-                ws_summary.write(row, 7, file_types[1], stl_data_cntr)
+            ws_summary.write('G1', text.cap4_G1, fmt['cap'])
+            ws_summary.write('H1', text.cap4_H1, fmt['cap'])
+            for row, file_types in enumerate(result.get_file_types(), start=1):
+                ws_summary.write(row, 6, file_types[0], fmt['data_left'])
+                ws_summary.write(row, 7, file_types[1], fmt['data_cntr'])
 
+        # === Formatting ===
         ws_detailed.autofit()
         ws_detailed.set_column('A:B', 60)
         ws_detailed.freeze_panes('A2')
-        ws_detailed.autofilter('A1:D1')
+        ws_detailed.autofilter('A1:{}1'.format('E' if args.t else 'D'))
         if args.t:
             ws_detailed.set_column('E:E', 50)
-            ws_detailed.autofilter('A1:E1')
 
         ws_summary.autofit()
         ws_summary.set_column('C:C', 2)
@@ -164,7 +174,7 @@ if __name__ == '__main__':
     parser.description = f'''\n
 {ASCII_TITLE}
 ===============================================================
-FileHasher 2.3.7
+FileHasher 2.3.8
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
