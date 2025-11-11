@@ -2,7 +2,7 @@
 import argparse
 from datetime import datetime
 from importlib import import_module
-from os import walk, path, rename, getcwd
+from os import scandir, path, rename, getcwd
 from sys import exit
 from types import SimpleNamespace
 import xlsxwriter
@@ -20,6 +20,21 @@ class NestedNamespace(SimpleNamespace):
                 self.__setattr__(key, NestedNamespace(value))
             else:
                 self.__setattr__(key, value)
+
+
+def iter_files(base_folder):
+    '''
+    Recursively traverses a folder, returning paths to all files.
+    '''
+    try:
+        with scandir(base_folder) as entries:
+            for entry in entries:
+                if entry.is_dir(follow_symlinks=False):
+                    yield from iter_files(entry.path)
+                elif entry.is_file(follow_symlinks=False):
+                    yield entry.path
+    except PermissionError:
+        return
 
 
 def get_report_filename(scanning_folders, report_file):
@@ -174,7 +189,7 @@ if __name__ == '__main__':
     parser.description = f'''\n
 {ASCII_TITLE}
 ===============================================================
-FileHasher 2.3.8
+FileHasher 2.3.9
 
 The program to search for duplicate files in a specified folder
 by their SHA1 or MD5 hashes.
@@ -218,15 +233,13 @@ Examples:
     result.print_result()
 
     for sf in args.folder:
-        for root, dirs, files in walk(sf):
-            for filename in files:
-                file_path = path.join(root, filename)
-                if path.islink(file_path):
-                    continue
-                file = File(file_path, hash_alg=args.a, check_type=args.t)
-                if file.size:
-                    file.set_file_data()
-                    result.add_file(file)
+        for file_path in iter_files(sf):
+            if path.islink(file_path):
+                continue
+            file = File(file_path, hash_alg=args.a, check_type=args.t)
+            if file.size:
+                file.set_file_data()
+                result.add_file(file)
 
     generate_report(report_filename, text.xls, result, args)
 
