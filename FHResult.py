@@ -1,6 +1,5 @@
 # coding=utf-8
 from sys import getsizeof
-from os import system
 from time import perf_counter
 
 from FHUtils import ASCII_TITLE, human_readable_time, human_readable_size
@@ -125,7 +124,7 @@ class Result:
         '''
         Print a formatted summary of the current results.
         '''
-        system('cls')
+        print("\033[H\033[J", end="")
         print(ASCII_TITLE)
 
         total_time = human_readable_time(perf_counter() - self._start_time)

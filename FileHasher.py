@@ -7,10 +7,13 @@ from sys import exit
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from types import SimpleNamespace
 import xlsxwriter
+from colorama import init
 
 from FHFile import File
 from FHResult import Result
 from FHUtils import ASCII_TITLE
+
+init()
 
 
 class NestedNamespace(SimpleNamespace):
@@ -190,7 +193,7 @@ if __name__ == '__main__':
     parser.description = f'''\n
 {ASCII_TITLE}
 =============================================================================
-FileHasher 2.4.0
+FileHasher 2.4.1
 
 The program to search for duplicate files in a specified folder by their SHA1
 or MD5 hashes.
