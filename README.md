@@ -53,6 +53,7 @@
 - python-magic
 - python-magic-bin
 - XlsxWriter
+- colorama
 
 ### Screenshots:
 
