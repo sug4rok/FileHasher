@@ -5,7 +5,7 @@ text = {
         'total_size': 'Total size',
         'dup_files': 'Redundancy files',
         'dup_size': 'Redundancy size',
-        'dup_percent': 'Redundancy percentage',
+        'dup_percent': 'Redundancy, %',
         'num_threads': 'Number of threads',
         'mem_usage': 'Memory usage',
         'mem_usage_percent': 'Memory usage, %',
