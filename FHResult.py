@@ -4,8 +4,8 @@ from FHMetrics import Metrics
 
 
 class Result:
-    def __init__(self, text, extend_info=False, workers=1):
-        self._metrics = Metrics(workers)
+    def __init__(self, text, extend_info=False):
+        self._metrics = Metrics()
         self._total_files = 0
         self._total_size = 0
         self._originals = {}

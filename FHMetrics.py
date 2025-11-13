@@ -1,15 +1,15 @@
 # coding=utf-8
-from psutil import Process
+from psutil import Process, cpu_count
 from time import perf_counter
 
 from FHUtils import human_readable_time, human_readable_size
 
 
 class Metrics:
-    def __init__(self, workers=1):
+    def __init__(self):
         self._start_time = perf_counter()
         self._process = Process()
-        self._workers = workers
+        self._cpu_count = cpu_count(logical=True)
 
     @property
     def elapsed_time(self):
@@ -37,7 +37,7 @@ class Metrics:
 
     @property
     def cpu_usage_pct(self):
-        return f'{(self._process.cpu_percent()/self._workers):.1f}'
+        return f'{self._process.cpu_percent() / self._cpu_count:.1f}'
 
     @property
     def read_bytes(self):

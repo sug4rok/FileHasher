@@ -193,7 +193,7 @@ if __name__ == '__main__':
     parser.description = f'''\n
 {ASCII_TITLE}
 =============================================================================
-FileHasher 2.5.0
+FileHasher 2.5.1
 
 The program to search for duplicate files in a specified folder by their SHA1
 or MD5 hashes.
@@ -262,17 +262,11 @@ processing')
 
     args = parser.parse_args()
 
-    iters = args.i
-    if iters < 10 or iters > 10000:
-        iters = 1000
-
-    workers = args.w if args.w > 0 else 1
-
     report_filename = get_report_filename(args.folder, args.r)
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
-    result = Result(text.cli, extend_info=args.e, workers=workers)
+    result = Result(text.cli, extend_info=args.e)
     result.print_result()
 
     all_files = []
@@ -286,6 +280,9 @@ processing')
         if file.size:
             file.set_file_data()
             result.add_file(file)
+
+    iters = args.i if 10 <= args.i <= 10000 else 1000
+    workers = args.w if args.w > 0 else 1
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [executor.submit(process_file, fp) for fp in all_files]
