@@ -143,7 +143,7 @@ def generate_report(report_filename, text, result, args):
             result.hr_total_size,
             str(result.redundancy_files),
             result.hr_redundancy_size,
-            result.redundancy_percent
+            result.redundancy_pct
         ]
         ws_summary.write_column('A1', captions, fmt['cap_left'])
         ws_summary.write_column('B1', summary_values[:2], fmt['data_cntr'])
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     parser.description = f'''\n
 {ASCII_TITLE}
 =============================================================================
-FileHasher 2.4.1
+FileHasher 2.5.0
 
 The program to search for duplicate files in a specified folder by their SHA1
 or MD5 hashes.
@@ -261,14 +261,18 @@ specified, it is\ncreated in the program folder with the name of the scanned\
 processing')
 
     args = parser.parse_args()
+
     iters = args.i
     if iters < 10 or iters > 10000:
         iters = 1000
+
+    workers = args.w if args.w > 0 else 1
+
     report_filename = get_report_filename(args.folder, args.r)
 
     text = NestedNamespace(import_module(f'locales.{args.l}').text)
 
-    result = Result(text.cli, extend_info=args.e)
+    result = Result(text.cli, extend_info=args.e, workers=workers)
     result.print_result()
 
     all_files = []
@@ -283,7 +287,7 @@ processing')
             file.set_file_data()
             result.add_file(file)
 
-    with ThreadPoolExecutor(max_workers=args.w) as executor:
+    with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [executor.submit(process_file, fp) for fp in all_files]
         for i, future in enumerate(as_completed(futures), 1):
             if result.total_files % iters == 0:

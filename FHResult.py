@@ -1,13 +1,11 @@
 # coding=utf-8
-from sys import getsizeof
-from time import perf_counter
-
-from FHUtils import ASCII_TITLE, human_readable_time, human_readable_size
+from FHUtils import ASCII_TITLE, human_readable_size
+from FHMetrics import Metrics
 
 
 class Result:
-    def __init__(self, text, extend_info=False):
-        self._start_time = perf_counter()
+    def __init__(self, text, extend_info=False, workers=1):
+        self._metrics = Metrics(workers)
         self._total_files = 0
         self._total_size = 0
         self._originals = {}
@@ -25,8 +23,10 @@ class Result:
         ]
         if self._extend_info:
             self._summary_keys.extend([
-                'mem_orig_size',
-                'mem_dup_size',
+                'num_threads',
+                'mem_usage',
+                'mem_usage_percent',
+                'cpu_usage_percent',
             ])
         captions = [getattr(self._text, key) for key in self._summary_keys]
         self._max_caption = len(max(captions, key=len))
@@ -57,7 +57,7 @@ class Result:
         return human_readable_size(self.redundancy_size)
 
     @property
-    def redundancy_percent(self):
+    def redundancy_pct(self):
         if not self._total_size:
             return '0 %'
         return f'{(100.0 * self.redundancy_size / self._total_size):.1f} %'
@@ -112,14 +112,6 @@ class Result:
             file_types[file.ftype] = file_types.get(file.ftype, 0) + 1
         return sorted(file_types.items(), key=lambda x: x[1], reverse=True)
 
-    @property
-    def mem_orig_size(self):
-        return human_readable_size(getsizeof(self._originals))
-
-    @property
-    def mem_dup_size(self):
-        return human_readable_size(getsizeof(self._duplicates))
-
     def print_result(self):
         '''
         Print a formatted summary of the current results.
@@ -127,22 +119,21 @@ class Result:
         print("\033[H\033[J", end="")
         print(ASCII_TITLE)
 
-        total_time = human_readable_time(perf_counter() - self._start_time)
-
         summary = [
             (self._text.total_files, self.total_files),
             (self._text.total_size, self.hr_total_size),
             (self._text.dup_files, self.redundancy_files),
             (self._text.dup_size, self.hr_redundancy_size),
-            (self._text.dup_percent, self.redundancy_percent),
-            (self._text.time_passed, total_time),
+            (self._text.dup_percent, self.redundancy_pct),
+            (self._text.time_passed, self._metrics.hr_elapsed_time),
         ]
 
         if self._extend_info:
             summary.extend([
-                (f'[ {self._text.mem_usage_title} ]', None),
-                (self._text.mem_orig_size, self.mem_orig_size),
-                (self._text.mem_dup_size, self.mem_dup_size),
+                (self._text.num_threads, self._metrics.num_threads),
+                (self._text.mem_usage, self._metrics.hr_mem_usage),
+                (self._text.mem_usage_percent, self._metrics.mem_usage_pct),
+                (self._text.cpu_usage_percent, self._metrics.cpu_usage_pct),
             ])
 
         for caption, value in summary:
